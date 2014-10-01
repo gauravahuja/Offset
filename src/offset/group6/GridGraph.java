@@ -13,7 +13,6 @@ public class GridGraph {
 	public HashMap<Point, HashSet<Point>> edgesByPoint;
 	public ArrayList<HistoryRecord> history;
 	public Pair pr;
-	public HashMap<Integer, HashSet<Point>> pointsByValue;
 	
 	private Point[] pointsBuffer = new Point[8];
 	
@@ -27,7 +26,6 @@ public class GridGraph {
 		}
 		history = new ArrayList<HistoryRecord>();
 		pr = graphPair;
-		pointsByValue = new HashMap<Integer, HashSet<Point>>();
 		for(int i = 0; i < grid.length; i++) {
 			Point[] possiblePoints = getAllNextMoves(grid[i], pr);
 			for(int possibleIndex = 0; possibleIndex < possiblePoints.length; possibleIndex++) {
@@ -77,23 +75,13 @@ public class GridGraph {
 	    }
 
 	    // target has a new value now; create new edges
-	    HashSet<Point> pointsWithSameValueAsTarget = pointsByValue.get(target.value);
-	    if (pointsWithSameValueAsTarget == null) {
-	    	pointsWithSameValueAsTarget = new HashSet<Point>();
-	    	pointsByValue.put(target.value, pointsWithSameValueAsTarget);
-	    }
-	    pointsWithSameValueAsTarget.add(target);
-	    if(target.value > 2) {
-	    	pointsByValue.get(target.value/2).remove(target);
-	    }
-	    
 	    Point[] possiblePoints = getAllNextMoves(target, pr);
 		for(int possibleIndex = 0; possibleIndex < possiblePoints.length; possibleIndex++) {
 			if(possiblePoints[possibleIndex] == null) {
 				continue;
 			}
 			
-			if(pointsWithSameValueAsTarget.contains(possiblePoints[possibleIndex])) {
+			if(target.value == possiblePoints[possibleIndex].value) {
 				addEdge(target, possiblePoints[possibleIndex]);
 			}
 		}
