@@ -50,6 +50,7 @@ public class Offset
     
     static Pair p0;
     static Pair p1;
+    static int usedP = 0;
     //static FileOutputStream out;
     static PrintWriter writer;
     static ArrayList<ArrayList> history = new ArrayList<ArrayList>();
@@ -138,16 +139,28 @@ public class Offset
 
     // generate a random Pair given a integer d
     static Pair randomPair(int d) {
-        Pair pr = new Pair();
-        // generate [0-50)
-        
-        pr.p = random.nextInt(d);
-        pr.q = d-pr.p;
-        while (pr.p == pr.q || pr.p==0 || pr.q==0) {
-        	pr.p = random.nextInt(d);
-            pr.q = d-pr.p;
+      if(d < 5){
+        System.out.println("d is too small to hold two pairs");
+        System.exit(0);
+      }
+      Pair pr = new Pair();
+      // while loop is naughty :|
+      // if usedP is set to positive number, excluding that number in pair,
+      // otherwise creat new pair, in ascending order
+      System.out.println(usedP);
+      if(usedP == 0){ // case: first pair
+        // make sure even number dont generate p = q 
+        pr.p = d % 2 == 0? random.nextInt(d/2 - 1) + 1 : random.nextInt(d / 2) + 1;
+        usedP = pr.p;
+        pr.q = d - pr.p;
+      } else { // case: second pair, random with one less number
+        pr.p = d % 2 == 0? random.nextInt(d/2 - 2) + 1 : random.nextInt(d / 2 - 1) + 1;
+        if(pr.p >= usedP){
+          pr.p++;
         }
-        return pr;
+        pr.q = d - pr.p;
+      } 
+      return pr;
     }
 
     
