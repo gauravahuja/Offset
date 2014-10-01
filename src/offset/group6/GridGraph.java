@@ -11,7 +11,7 @@ public class GridGraph {
 	
 	public Point[] grid = new Point[SIZE*SIZE];
 	public HashMap<Point, HashSet<Point>> edgesByPoint;
-	public ArrayList<movePair> history;
+	public ArrayList<HistoryRecord> history;
 	public Pair pr;
 	public HashMap<Integer, HashSet<Point>> pointsByValue;
 	
@@ -25,7 +25,7 @@ public class GridGraph {
 				edgesByPoint.put(grid[i*SIZE+j], new HashSet<Point>());
 			}
 		}
-		history = new ArrayList<movePair>();
+		history = new ArrayList<HistoryRecord>();
 		pr = graphPair;
 		pointsByValue = new HashMap<Integer, HashSet<Point>>();
 		for(int i = 0; i < grid.length; i++) {
@@ -47,6 +47,7 @@ public class GridGraph {
 		src.value = 0;
 		target.value *= 2;
 		target.owner = playerId;
+		history.add(new HistoryRecord(playerId, movepr));
 
 		
 		HashSet<Point> edgesFromSrc = edgesByPoint.get(src);
@@ -82,6 +83,9 @@ public class GridGraph {
 	    	pointsByValue.put(target.value, pointsWithSameValueAsTarget);
 	    }
 	    pointsWithSameValueAsTarget.add(target);
+	    if(target.value > 2) {
+	    	pointsByValue.get(target.value/2).remove(target);
+	    }
 	    
 	    Point[] possiblePoints = getAllNextMoves(target, pr);
 		for(int possibleIndex = 0; possibleIndex < possiblePoints.length; possibleIndex++) {
@@ -130,5 +134,15 @@ public class GridGraph {
 			return null;
 		}
 		return grid[SIZE*x + y];
+	}
+	
+	private class HistoryRecord {
+		public int playerId;
+		public movePair movepr;
+		
+		public HistoryRecord(int playerId, movePair movepr) {
+			this.playerId = playerId;
+			this.movepr = movepr;
+		}
 	}
 }
