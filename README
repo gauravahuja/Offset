@@ -1,0 +1,40 @@
+Programming and Problem Solving
+COMS W4444, Fall 2014, Columbia University
+
+Group 6
+=======
+
+Gaurav Ahuja (ga2371)
+Joshua Augustin (jda2158)
+Mateus Antunes Braga (ma3382)
+
+1. Problem Description
+======================
+
+This game is motivated by the popular game app ``2048'' (full disclosure: I once reached the 8192 tile!). Two players take turns trying to combine piles of coins distributed over a two dimensional 32x32 grid; the grid starts with one coin on each cell. To be combined, the two piles must be of the same size. The combining player can choose which of the two original source cells contains the new pile (of double the size) and which becomes empty. There is an important additional constraint on the cells to be combined: they must be at a precise offset from each other, with the offset being specific to the player.
+
+A parameter d determines the Manhattan distance at which pile interactions happen. Each player receives a pair of positive integers (p,q) such that (a) p+q=d; (b) p and q are distinct; (c) the two players have different pairs. For example, if d=7, then player 1 may receive (1,6) and player 2 (3,4). Given p and q, a player can combine the contents of cell (x,y) with one of eight other cells: (x+p,y+q), (x+p,y-q), (x-p,y+q), (x-p,y-q), (x+q,y+p), (x+q,y-p), (x-q,y+p), (x-q,y-p). If one or more of these possible coordinates is out of range (less than 1 or greater than 32) then there are fewer options for that (x,y) position. Since players have distinct pairs, the available moves for each player are different.
+
+When a player combines two cells, she is said to ``own'' the combined pile. That pile may later combined with another pile, in which case ownership belongs to the player who made the subsequent combination. The game continues until both players have no legal moves. (If one player has no legal moves, she must pass and let the other player play if she can.) The final score is the total number of coins in piles owned by the player at the end of the game.
+
+We will run various games with different values of d. For small d we can exhaustively run games for all possible choices of pairs for the two players, to eliminate bias due to ``good'' or ``bad'' offset pairs. (What might make an offset pair ``bad''?)
+
+At the end of the project, we'll run a tournament to see which strategies are most effective. 
+
+2. Running the Code
+===================
+
+java offset.sim.Offset d [player0] [player1] outputfile
+
+Example: java offset.sim.Offset 6 dumb dumb1 output
+Means p+q = 6, the first player is dumb, the second player is dumb1. The log file is the outputfile, which may be useful for you to check the history of the game.
+
+2. For the player class, you have four inputs:
+
+- grid is the map of the current field, which includes the score for each grid
+- pr, it is the pair you get
+- pr0, it is the pair the other player get
+- history, it is the record of your move and the other player's move
+
+
+
