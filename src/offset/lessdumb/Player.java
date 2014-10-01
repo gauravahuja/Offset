@@ -125,6 +125,11 @@ public class Player extends offset.sim.Player {
             }
         }
 
+        if (best == null) {
+            best = new movePair();
+            best.move = false;
+        }
+
         return best;
 	}
 
