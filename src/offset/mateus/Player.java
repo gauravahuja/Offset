@@ -24,8 +24,20 @@ public class Player extends offset.sim.Player {
 		currentHistory = history;
 		
 		// System.out.println(history.size());
-		ArrayList lastMove = history.remove(history.size() - 1);
-		movePair lastMovePair = (movePair) lastMove.remove(1);
+		ArrayList lastMove;
+		movePair lastMovePair;
+		
+		if (history.size() > 0) {
+			lastMove = history.remove(history.size() - 1);
+			lastMovePair = (movePair) lastMove.remove(1);
+				
+		} else {
+			lastMovePair = new movePair();
+			lastMovePair.target = currentGrid[0];
+		}
+		
+		
+		
 //		System.out.printf("Last move was %s to %s\n", lastMovePair.src, lastMovePair.target);
 		movePair movepr = new movePair();
 		for (int y1_offset = 0; y1_offset < SIZE; y1_offset++) {
