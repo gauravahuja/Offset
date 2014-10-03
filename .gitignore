@@ -5,5 +5,5 @@
 .project
 src/bin
 src/output
-src/output1
-
+analysis/venv
+*.pyc
