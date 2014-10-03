@@ -1,7 +1,9 @@
-/bin
+bin
 *.class
 *.log
 .classpath
 .project
 src/bin
 src/output
+analysis/venv
+*.pyc
