@@ -42,8 +42,8 @@ public class Player extends offset.sim.Player {
 			}
 		}
 		
-		System.out.printf("Possibles moves for me: %d\n", myGridGraph.GetNumberOfPossibleMoves());
-		System.out.printf("Possibles moves for adversary: %d\n", advGridGraph.GetNumberOfPossibleMoves());
+		System.out.printf("Possibles moves for me: %d\n", myGridGraph.GetNumberOfEdges());
+		System.out.printf("Possibles moves for adversary: %d\n", advGridGraph.GetNumberOfEdges());
 		
 		movePair movepr = new movePair();
 		for (int i = 0; i < SIZE; i++) {

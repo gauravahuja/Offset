@@ -1,6 +1,7 @@
 package offset.group6;
 
 import java.util.*;
+import java.util.Map.Entry;
 
 import offset.sim.Pair;
 import offset.sim.Point;
@@ -146,11 +147,15 @@ public class GridGraph {
 		edgesByPoint.get(b).add(a);
 	}
 	
-	public int GetNumberOfPossibleMoves() {
+	public int GetNumberOfEdges() {
 		int count = 0;
-		for(int i = 0; i < grid.length; i++) {
-			count += edgesByPoint.get(grid[i]).size();
-		}
+
+		Iterator<Entry<Point, HashSet<Point>>> it = edgesByPoint.entrySet().iterator();
+	    while (it.hasNext()) {
+	        Map.Entry<Point, HashSet<Point>> pairs = (Map.Entry<Point, HashSet<Point>>)it.next();
+	        count += pairs.getValue().size();
+	    }
+	    
 		return count / 2;
 	}
 
