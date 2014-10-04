@@ -93,30 +93,30 @@ public class Offset
             // load players
             // search for compiled files
             File classFile = new File(ROOT_DIR + sep + group + sep + "Player.class");
-            System.err.println(classFile.getAbsolutePath());
+            //System.err.println(classFile.getAbsolutePath());
             if (!classFile.exists() || recompile) {
                 // delete all class files
                 List <File> classFiles = directoryFiles(ROOT_DIR + sep + group, ".class");
-                System.err.print("Deleting " + classFiles.size() + " class files...   ");
+                //System.err.print("Deleting " + classFiles.size() + " class files...   ");
                 for (File file : classFiles)
                     file.delete();
-                System.err.println("OK");
+                //System.err.println("OK");
                 if (compiler == null) compiler = ToolProvider.getSystemJavaCompiler();
                 if (compiler == null) throw new Exception("Cannot load compiler");
                 if (fileManager == null) fileManager = compiler.getStandardFileManager(null, null, null);
                 if (fileManager == null) throw new Exception("Cannot load file manager");
                 // compile all files
                 List <File> javaFiles = directoryFiles(ROOT_DIR + sep + group, ".java");
-                System.err.print("Compiling " + javaFiles.size() + " source files...   ");
+                //System.err.print("Compiling " + javaFiles.size() + " source files...   ");
                 Iterable<? extends JavaFileObject> units = fileManager.getJavaFileObjectsFromFiles(javaFiles);
                 boolean ok = compiler.getTask(null, fileManager, null, null, null, units).call();
                 if (!ok) throw new Exception("Compile error");
-                System.err.println("OK");
+                //System.err.println("OK");
             }
             // load class
-            System.err.print("Loading player class...   ");
+            //System.err.print("Loading player class...   ");
             Class playerClass = loader.loadClass(ROOT_DIR + "." + group + ".Player");
-            System.err.println("OK");
+            //System.err.println("OK");
             // set name of player and append on list
             Class[] cArg = new Class[2]; //Our constructor has 3 arguments
             cArg[0] = Pair.class; //First argument is of *object* type Long
@@ -140,14 +140,14 @@ public class Offset
     // generate a random Pair given a integer d
     static Pair randomPair(int d) {
       if(d < 5){
-        System.out.println("d is too small to hold two pairs");
+        //System.out.println("d is too small to hold two pairs");
         System.exit(0);
       }
       Pair pr = new Pair();
       // while loop is naughty :|
       // if usedP is set to positive number, excluding that number in pair,
       // otherwise creat new pair, in ascending order
-      System.out.println(usedP);
+      //System.out.println(usedP);
       if(usedP == 0){ // case: first pair
         // make sure even number dont generate p = q 
         pr.p = d % 2 == 0? random.nextInt(d/2 - 1) + 1 : random.nextInt(d / 2) + 1;
@@ -200,7 +200,7 @@ public class Offset
                 label.setText("Time out!!!");
                 label.setVisible(true);
                 // print error message
-                System.err.println("[ERROR] The player is time out!");
+                //System.err.println("[ERROR] The player is time out!");
                 next.setEnabled(false);
                 return false;
             }
@@ -219,7 +219,16 @@ public class Offset
                 scr1 = calculatescore(1);
                 label0.setText("score for player0  is "+scr0+" score for player1 is "+scr1);
                 label0.setVisible(true);
-                System.err.println("[SUCCESS] The player achieves the goal in " + tick + " ticks.");
+                String winningGroupName = null;
+                if (scr0 > scr1) {
+                    System.out.println(group0);
+                } else {
+                    winningGroupName = group1;
+                }
+                winningGroupName = group0;
+                System.out.println(group1);
+                System.err.format("Winner: %s. Final score: %d - %d", winningGroupName, scr0, scr1);
+                //System.err.println("[SUCCESS] The player achieves the goal in " + tick + " ticks.");
                 next.setEnabled(false);
                 return false;
             }
@@ -430,7 +439,7 @@ public class Offset
     // detect whether the player has achieved the requirement
     boolean endOfGame() {
             if (counter >=2 || nomoveend) {
-            	System.out.println("end of the game!");
+            	//System.out.println("end of the game!");
             	return true;
             	
             }
@@ -467,7 +476,7 @@ public class Offset
         	currentPr = p1;
         	currentplayer =1;
         }
-        //System.out.println(next.move);
+        ////System.out.println(next.move);
         if (next.move) {
         if (validateMove(next, currentPr)) {
         	writer.printf("(%d, %b, (%d, %d), (%d, %d), %d)\n", currentplayer, next.move, next.src.x, next.src.y, next.target.x, next.target.y, next.src.value*2);
@@ -480,18 +489,18 @@ public class Offset
         	//pairPrint(next);
         }
         else {
-        	System.out.println("[ERROR] Invalid move, let the player stay.");
+        	//System.out.println("[ERROR] Invalid move, let the player stay.");
         }
         }
         else {
         	if (nomove(currentPr)) {
-        		System.out.printf("%d player no move\n", currentplayer);
+        		//System.out.printf("%d player no move\n", currentplayer);
         		counter = counter+1;
         	}
         	else {
         		nomoveend = true;
         		nomoveid = currentplayer;
-        		System.err.printf("Player %d still have valid movie, but it gives up", currentplayer);
+        		//System.err.format("Player %d still have valid movie, but it gives up\n", currentplayer);
         	}
         }
         
@@ -503,13 +512,24 @@ public class Offset
             playStep();
         }
         
+        int scr0 = calculatescore(0);
+        int scr1 = calculatescore(1);
+        String winningGroupName = null;
+        if (scr0 > scr1) {
+            System.out.println(group0);
+        } else {
+            winningGroupName = group1;
+        }
+        winningGroupName = group0;
+        System.out.println(group1);
+        System.err.format("Winner: %s. Final score: %d - %d\n", winningGroupName, scr0, scr1);
         if (tick > MAX_TICKS) {
             // Time out
-            System.err.println("[ERROR] The player is time out!");
+            //System.err.println("[ERROR] The player is time out!");
         }
         else {
             // Achieve the goal
-            System.err.println("[SUCCESS] The player achieves the goal in " + tick + " ticks.");
+            //System.err.println("[SUCCESS] The player achieves the goal in " + tick + " ticks.");
         }
     }
 
@@ -523,8 +543,8 @@ public class Offset
     }
    
    void pairPrint(movePair movepr) {
-	   System.out.printf("src is (%d, %d) = %d", movepr.src.x, movepr.src.y, movepr.src.value);
-	   System.out.printf("target is (%d, %d) = %d \n", movepr.target.x, movepr.target.y, movepr.target.value);
+	   //System.out.printf("src is (%d, %d) = %d", movepr.src.x, movepr.src.y, movepr.src.value);
+	   //System.out.printf("target is (%d, %d) = %d \n", movepr.target.x, movepr.target.y, movepr.target.value);
 	   
    }
    boolean nomove(Pair pr) {
@@ -545,12 +565,12 @@ public class Offset
 	   return true;
    }
     
+    public static String group0 = null;
+    public static String group1 = null;
 	public static void main(String[] args) throws Exception
 	{
-        // game parameters
-        String group0 = null;
-        String group1 = null;
         String output = null;
+        // game parameters
         int d = 0;
         if (args.length > 0)
              d = Integer.parseInt(args[0]);
@@ -558,32 +578,49 @@ public class Offset
             group0 = args[1];
         if (args.length > 2)
             group1 = args[2];
-        if (args.length >3)
-        	output = args[3];
+        if (args.length > 3) {
+            gui = args[3].equals("1");
+        }
+        if (args.length > 4)
+        	output = args[4];
+        if (args.length == 8) {
+            int pl = Integer.parseInt(args[5]);
+            int ql = Integer.parseInt(args[6]);
+
+            int pr = Integer.parseInt(args[7]);
+            int qr = Integer.parseInt(args[8]);
+
+            p0 = new Pair();
+            p0.p = pl;
+            p0.q = ql;
+
+            p1 = new Pair();
+            p1.p = pr;
+            p1.q = qr;
+        } else {
+            p0=randomPair(d);
+            p1=randomPair(d);
+            while (p0.p==p1.p || p0.q == p1.p) {
+                p1=randomPair(d);
+            }
+        }
         
         // create game
        
 		writer = new PrintWriter(output, "UTF-8");
         Offset game = new Offset();
         game.init();
-        p0=randomPair(d);
-        p1=randomPair(d);
-        while (p0.p==p1.p || p0.q == p1.p) {
-        	p1=randomPair(d);
-        }
-        System.out.printf("Pair 1 is (%d, %d)", p0.p, p0.q);
-        System.out.printf("Pair 2 is (%d, %d)", p1.p, p1.q);
+        //System.out.printf("Pair 1 is (%d, %d)", p0.p, p0.q);
+        //System.out.printf("Pair 2 is (%d, %d)", p1.p, p1.q);
         player0 = loadPlayer(group0, p0, 0);
         player1 = loadPlayer(group1, p1, 1);
         // init game
         
-        // play game
-        //if (gui) {
+        if (gui) {
             game.playgui();
-       // }
-       // else {
-         //   game.play();
-       // }
+        } else {
+            game.play();
+        }
        
     }        
 
