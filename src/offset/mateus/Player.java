@@ -2,6 +2,7 @@ package offset.mateus;
 
 import java.util.*;
 
+import offset.group6.GridGraph;
 import offset.sim.Pair;
 import offset.sim.Point;
 import offset.sim.movePair;
@@ -12,7 +13,10 @@ public class Player extends offset.sim.Player {
 	Point[] currentGrid;
 	Pair myPair;
 	Pair advPair;
-	ArrayList<ArrayList> currentHistory;
+	GridGraph myGridGraph;
+	GridGraph advGridGraph;
+	
+	boolean playerInitialized = false;
 
 	public Player(Pair prin, int idin) { super(prin, idin);	}
 	public void init() {}
@@ -21,52 +25,49 @@ public class Player extends offset.sim.Player {
 		currentGrid = grid;
 		myPair = pr;
 		advPair = pr0;
-		currentHistory = history;
+
+		if (!playerInitialized) {
+			myGridGraph = new GridGraph(pr);
+			advGridGraph = new GridGraph(pr0);
+			playerInitialized = true;
+		}
 		
-		// System.out.println(history.size());
-		ArrayList lastMove = history.remove(history.size() - 1);
-		movePair lastMovePair = (movePair) lastMove.remove(1);
-//		System.out.printf("Last move was %s to %s\n", lastMovePair.src, lastMovePair.target);
+		// update graphs with adversary last move
+		if (history.size() >= 1) {
+			int advId = (int) history.get(history.size() - 1).get(0);
+			if (advId != id) {
+				movePair advLastMovePair = (movePair) history.get(history.size() - 1).get(1);
+				advGridGraph.UpdateGraphWithMovePair(advLastMovePair, advId);
+				myGridGraph.UpdateGraphWithMovePair(advLastMovePair, advId);
+			}
+		}
+		
+		System.out.printf("Possibles moves for me: %d\n", myGridGraph.GetNumberOfPossibleMoves());
+		System.out.printf("Possibles moves for adversary: %d\n", advGridGraph.GetNumberOfPossibleMoves());
+		
 		movePair movepr = new movePair();
-		for (int y1_offset = 0; y1_offset < SIZE; y1_offset++) {
-			for (int x1_offset = 0; x1_offset < SIZE; x1_offset++) {
-				for (int y2_offset = 0; y2_offset < SIZE; y2_offset++) {
-					for (int x2_offset = 0; x2_offset < SIZE; x2_offset++) {
+		for (int i = 0; i < SIZE; i++) {
+			for (int j = 0; j < SIZE; j++) {
+				for (int i_pr=0; i_pr<SIZE; i_pr++) {
+					for (int j_pr=0; j_pr <SIZE; j_pr++) {
 						movepr.move = false;
-						movepr.src = grid[(((lastMovePair.target.x + x1_offset) * SIZE) + (lastMovePair.target.y + y1_offset)) % (SIZE*SIZE)];
-						movepr.target = grid[SIZE * x2_offset + y2_offset];
-//						System.out.printf("Will try %s to %s\n", movepr.src, movepr.target);
-						if (validateMove(movepr, pr) && advNextMovesIsNotThatGood(movepr)) {
+						movepr.src = grid[i*SIZE+j];
+						movepr.target = grid[i_pr*SIZE+j_pr];
+						if (validateMove(movepr, pr)) {
 							movepr.move = true;
+							// update graphs with adversary last move
+							advGridGraph.UpdateGraphWithMovePair(movepr, id);
+							myGridGraph.UpdateGraphWithMovePair(movepr, id);
 							return movepr;
 						}
 					}
 				}
-				/*
-				 * if (i + pr.x >= 0 && i + pr.x < size) { if (j + pr.y >= 0 &&
-				 * j + pr.y < size) {
-				 * 
-				 * } if (j - pr.y >= 0 && j - pr.y < size) {
-				 * 
-				 * } } if (i - pr.x >= 0 && i - pr.x < size) { if (j + pr.y >= 0
-				 * && j + pr.y < size) {
-				 * 
-				 * } if (j - pr.y >= 0 && j - pr.y < size) {
-				 * 
-				 * } } if (i + pr.y >= 0 && i + pr.y < size) { if (j + pr.x >= 0
-				 * && j + pr.x < size) {
-				 * 
-				 * } if (j - pr.x >= 0 && j - pr.x < size) {
-				 * 
-				 * } } if (i - pr.y >= 0 && i - pr.y < size) { if (j + pr.x >= 0
-				 * && j + pr.x < size) {
-				 * 
-				 * } if (j - pr.x >= 0 && j - pr.x < size) {
-				 * 
-				 * } }
-				 */
 			}
 		}
+		
+		// update graphs with adversary last move
+		advGridGraph.UpdateGraphWithMovePair(movepr, id);
+		myGridGraph.UpdateGraphWithMovePair(movepr, id);
 		return movepr;
 	}
 
