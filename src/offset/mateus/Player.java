@@ -27,8 +27,9 @@ public class Player extends offset.sim.Player {
 		advPair = pr0;
 
 		if (!playerInitialized) {
-			myGridGraph = new GridGraph(pr);
-			advGridGraph = new GridGraph(pr0);
+			int advId = id + 1 % 2;
+			myGridGraph = new GridGraph(pr, id);
+			advGridGraph = new GridGraph(pr0, advId);
 			playerInitialized = true;
 		}
 		
@@ -37,13 +38,13 @@ public class Player extends offset.sim.Player {
 			int advId = (int) history.get(history.size() - 1).get(0);
 			if (advId != id) {
 				movePair advLastMovePair = (movePair) history.get(history.size() - 1).get(1);
-				advGridGraph.UpdateGraphWithMovePair(advLastMovePair, advId);
-				myGridGraph.UpdateGraphWithMovePair(advLastMovePair, advId);
+				advGridGraph.updateGraphWithMovePair(advLastMovePair, advId);
+				myGridGraph.updateGraphWithMovePair(advLastMovePair, advId);
 			}
 		}
 		
-		System.out.printf("Possibles moves for me: %d\n", myGridGraph.GetNumberOfEdges());
-		System.out.printf("Possibles moves for adversary: %d\n", advGridGraph.GetNumberOfEdges());
+		System.out.printf("Possibles moves for me: %d\n", myGridGraph.getNumberOfEdges());
+		System.out.printf("Possibles moves for adversary: %d\n", advGridGraph.getNumberOfEdges());
 		
 		movePair movepr = new movePair();
 		for (int i = 0; i < SIZE; i++) {
@@ -56,8 +57,8 @@ public class Player extends offset.sim.Player {
 						if (validateMove(movepr, pr)) {
 							movepr.move = true;
 							// update graphs with adversary last move
-							advGridGraph.UpdateGraphWithMovePair(movepr, id);
-							myGridGraph.UpdateGraphWithMovePair(movepr, id);
+							advGridGraph.updateGraphWithMovePair(movepr, id);
+							myGridGraph.updateGraphWithMovePair(movepr, id);
 							return movepr;
 						}
 					}
@@ -66,8 +67,8 @@ public class Player extends offset.sim.Player {
 		}
 		
 		// update graphs with adversary last move
-		advGridGraph.UpdateGraphWithMovePair(movepr, id);
-		myGridGraph.UpdateGraphWithMovePair(movepr, id);
+		advGridGraph.updateGraphWithMovePair(movepr, id);
+		myGridGraph.updateGraphWithMovePair(movepr, id);
 		return movepr;
 	}
 
