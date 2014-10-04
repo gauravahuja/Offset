@@ -154,7 +154,7 @@ public class GridGraph {
 		return count / 2;
 	}
 
-	private void loadAllNextMoves(Point src, Pair pr) {
+	private Point[] loadAllNextMoves(Point src, Pair pr) {
 		assert(pointsBuffer.length == 8);
 		
 		pointsBuffer[0] = getGraphGridPoint(src.x - pr.p, src.y - pr.q);
@@ -165,6 +165,7 @@ public class GridGraph {
 		pointsBuffer[5] = getGraphGridPoint(src.x - pr.q, src.y + pr.p);
 		pointsBuffer[6] = getGraphGridPoint(src.x + pr.q, src.y - pr.p);
 		pointsBuffer[7] = getGraphGridPoint(src.x + pr.q, src.y + pr.p);
+		return pointsBuffer;
 	}
 	
 	private Point getGraphGridPoint(int x, int y) {
