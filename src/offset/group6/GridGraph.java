@@ -14,7 +14,7 @@ public class GridGraph {
 	public ArrayList<HistoryRecord> history;
 	public Pair pr;
 	
-	private Point[] pointsBuffer = new Point[8];
+	private Point[] possiblePoints = new Point[8];
 	
 	public GridGraph(Pair graphPair) {
 		edgesByPoint = new HashMap<Point, HashSet<Point>>();
@@ -27,7 +27,7 @@ public class GridGraph {
 		history = new ArrayList<HistoryRecord>();
 		pr = graphPair;
 		for(int i = 0; i < grid.length; i++) {
-			Point[] possiblePoints = loadAllNextMoves(grid[i], pr);
+			loadPossiblePoints(grid[i], pr);
 			for(int possibleIndex = 0; possibleIndex < possiblePoints.length; possibleIndex++) {
 				if(possiblePoints[possibleIndex] == null) {
 					continue;
@@ -75,7 +75,7 @@ public class GridGraph {
 	    }
 
 	    // target has a new value now; create new edges
-	    Point[] possiblePoints = loadAllNextMoves(target, pr);
+	    loadPossiblePoints(target, pr);
 		for(int possibleIndex = 0; possibleIndex < possiblePoints.length; possibleIndex++) {
 			if(possiblePoints[possibleIndex] == null) {
 				continue;
@@ -101,7 +101,7 @@ public class GridGraph {
 		HashSet<Point> edgesFromSrc = edgesByPoint.get(src);
 		assert(edgesFromSrc != null);
 		// src.value now has old value; add new connections
-		Point[] possiblePoints = loadAllNextMoves(src, pr);
+		loadPossiblePoints(src, pr);
 		for(int possibleIndex = 0; possibleIndex < possiblePoints.length; possibleIndex++) {
 			if(possiblePoints[possibleIndex] == null) {
 				continue;
@@ -126,7 +126,7 @@ public class GridGraph {
 	    }
 
 	    // target has a new value now; create new edges
-	    possiblePoints = loadAllNextMoves(target, pr);
+	    loadPossiblePoints(target, pr);
 		for(int possibleIndex = 0; possibleIndex < possiblePoints.length; possibleIndex++) {
 			if(possiblePoints[possibleIndex] == null) {
 				continue;
@@ -154,18 +154,17 @@ public class GridGraph {
 		return count / 2;
 	}
 
-	private Point[] loadAllNextMoves(Point src, Pair pr) {
-		assert(pointsBuffer.length == 8);
+	private void loadPossiblePoints(Point src, Pair pr) {
+		assert(possiblePoints.length == 8);
 		
-		pointsBuffer[0] = getGraphGridPoint(src.x - pr.p, src.y - pr.q);
-		pointsBuffer[1] = getGraphGridPoint(src.x - pr.p, src.y + pr.q);
-		pointsBuffer[2] = getGraphGridPoint(src.x + pr.p, src.y - pr.q);
-		pointsBuffer[3] = getGraphGridPoint(src.x + pr.p, src.y + pr.q);
-		pointsBuffer[4] = getGraphGridPoint(src.x - pr.q, src.y - pr.p);
-		pointsBuffer[5] = getGraphGridPoint(src.x - pr.q, src.y + pr.p);
-		pointsBuffer[6] = getGraphGridPoint(src.x + pr.q, src.y - pr.p);
-		pointsBuffer[7] = getGraphGridPoint(src.x + pr.q, src.y + pr.p);
-		return pointsBuffer;
+		possiblePoints[0] = getGraphGridPoint(src.x - pr.p, src.y - pr.q);
+		possiblePoints[1] = getGraphGridPoint(src.x - pr.p, src.y + pr.q);
+		possiblePoints[2] = getGraphGridPoint(src.x + pr.p, src.y - pr.q);
+		possiblePoints[3] = getGraphGridPoint(src.x + pr.p, src.y + pr.q);
+		possiblePoints[4] = getGraphGridPoint(src.x - pr.q, src.y - pr.p);
+		possiblePoints[5] = getGraphGridPoint(src.x - pr.q, src.y + pr.p);
+		possiblePoints[6] = getGraphGridPoint(src.x + pr.q, src.y - pr.p);
+		possiblePoints[7] = getGraphGridPoint(src.x + pr.q, src.y + pr.p);
 	}
 	
 	private Point getGraphGridPoint(int x, int y) {
