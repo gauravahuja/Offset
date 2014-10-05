@@ -1,6 +1,7 @@
 package offset.group6;
 
 import java.util.*;
+import java.util.Map.Entry;
 
 import offset.sim.Pair;
 import offset.sim.Point;
@@ -13,21 +14,27 @@ public class GridGraph {
 	public HashMap<Point, HashSet<Point>> edgesByPoint;
 	public ArrayList<HistoryRecord> history;
 	public Pair pr;
+	public int graphPlayerId;
 	
-	private Point[] pointsBuffer = new Point[8];
+	private Point[] possiblePoints = new Point[8];
 	
-	public GridGraph(Pair graphPair) {
+	// evaluation and scores variables
+	public int score;
+	
+	public GridGraph(Pair graphPair, int playerId) {
+		history = new ArrayList<HistoryRecord>();
+		pr = graphPair;
+		graphPlayerId = playerId;
 		edgesByPoint = new HashMap<Point, HashSet<Point>>();
+		
 		for (int i=0; i<SIZE; i++) {
 			for (int j=0; j<SIZE; j++) {
 				grid[i*SIZE+j] = new Point(i, j, 1, -1);
 				edgesByPoint.put(grid[i*SIZE+j], new HashSet<Point>());
 			}
 		}
-		history = new ArrayList<HistoryRecord>();
-		pr = graphPair;
 		for(int i = 0; i < grid.length; i++) {
-			Point[] possiblePoints = getAllNextMoves(grid[i], pr);
+			loadPossiblePoints(grid[i], pr);
 			for(int possibleIndex = 0; possibleIndex < possiblePoints.length; possibleIndex++) {
 				if(possiblePoints[possibleIndex] == null) {
 					continue;
@@ -38,15 +45,30 @@ public class GridGraph {
 		}
 	}
 	
-	public GridGraph UpdateGraphWithMovePair(movePair movepr, int playerId) {
+	public GridGraph updateGraphWithMovePair(movePair movepr, int playerId) {
 //		System.out.printf("Received following movePair: %d,%d to %d,%d\n", movepr.src.x, movepr.src.y, movepr.target.x, movepr.target.y);
 		Point src = getGraphGridPoint(movepr.src.x, movepr.src.y);
 		Point target = getGraphGridPoint(movepr.target.x, movepr.target.y);
+		
 		history.add(new HistoryRecord(playerId, movepr,src.owner, target.owner));
+
+		//update score
+		if (src.owner == graphPlayerId) {
+			// player lost src
+			score -= src.value;
+		}
+		if (target.owner == graphPlayerId) {
+			// player "lost" target. Will be compensated if necessary (see next if)
+			score -= target.value;
+		}
+		if (playerId == graphPlayerId) {
+			// player gains target
+			score += target.value*2;
+		}
+		
 		src.value = 0;
 		target.value *= 2;
 		target.owner = playerId;
-
 		
 		HashSet<Point> edgesFromSrc = edgesByPoint.get(src);
 		assert(edgesFromSrc != null);
@@ -75,7 +97,7 @@ public class GridGraph {
 	    }
 
 	    // target has a new value now; create new edges
-	    Point[] possiblePoints = getAllNextMoves(target, pr);
+	    loadPossiblePoints(target, pr);
 		for(int possibleIndex = 0; possibleIndex < possiblePoints.length; possibleIndex++) {
 			if(possiblePoints[possibleIndex] == null) {
 				continue;
@@ -89,10 +111,25 @@ public class GridGraph {
 		return this;
 	}
 	
-	public GridGraph UndoGraphByOneMovePair() {
+	public GridGraph undoGraphByOneMovePair() {
 		HistoryRecord record = history.remove(history.size()-1);
 		Point src = getGraphGridPoint(record.movepr.src.x, record.movepr.src.y);
 		Point target = getGraphGridPoint(record.movepr.target.x, record.movepr.target.y);
+		
+		//update score
+		if (target.owner == graphPlayerId) {
+			// player "lost" target
+			score -= target.value;
+		}
+		if (record.srcOriginalOwner == graphPlayerId) {
+			// player gains src
+			score += target.value/2;
+		}
+		if (record.targetOriginalOwner == graphPlayerId) {
+			// player gains target
+			score += target.value/2;
+		}
+		
 		target.value /= 2;
 		src.value = target.value;
 		src.owner = record.srcOriginalOwner;
@@ -101,7 +138,7 @@ public class GridGraph {
 		HashSet<Point> edgesFromSrc = edgesByPoint.get(src);
 		assert(edgesFromSrc != null);
 		// src.value now has old value; add new connections
-		Point[] possiblePoints = getAllNextMoves(src, pr);
+		loadPossiblePoints(src, pr);
 		for(int possibleIndex = 0; possibleIndex < possiblePoints.length; possibleIndex++) {
 			if(possiblePoints[possibleIndex] == null) {
 				continue;
@@ -126,7 +163,7 @@ public class GridGraph {
 	    }
 
 	    // target has a new value now; create new edges
-	    possiblePoints = getAllNextMoves(target, pr);
+	    loadPossiblePoints(target, pr);
 		for(int possibleIndex = 0; possibleIndex < possiblePoints.length; possibleIndex++) {
 			if(possiblePoints[possibleIndex] == null) {
 				continue;
@@ -145,27 +182,18 @@ public class GridGraph {
 		edgesByPoint.get(a).add(b);
 		edgesByPoint.get(b).add(a);
 	}
-	
-	public int GetNumberOfPossibleMoves() {
-		int count = 0;
-		for(int i = 0; i < grid.length; i++) {
-			count += edgesByPoint.get(grid[i]).size();
-		}
-		return count / 2;
-	}
 
-	private Point[] getAllNextMoves(Point src, Pair pr) {
-		assert(pointsBuffer.length == 8);
+	private void loadPossiblePoints(Point src, Pair pr) {
+		assert(possiblePoints.length == 8);
 		
-		pointsBuffer[0] = getGraphGridPoint(src.x - pr.p, src.y - pr.q);
-		pointsBuffer[1] = getGraphGridPoint(src.x - pr.p, src.y + pr.q);
-		pointsBuffer[2] = getGraphGridPoint(src.x + pr.p, src.y - pr.q);
-		pointsBuffer[3] = getGraphGridPoint(src.x + pr.p, src.y + pr.q);
-		pointsBuffer[4] = getGraphGridPoint(src.x - pr.q, src.y - pr.p);
-		pointsBuffer[5] = getGraphGridPoint(src.x - pr.q, src.y + pr.p);
-		pointsBuffer[6] = getGraphGridPoint(src.x + pr.q, src.y - pr.p);
-		pointsBuffer[7] = getGraphGridPoint(src.x + pr.q, src.y + pr.p);
-		return pointsBuffer;
+		possiblePoints[0] = getGraphGridPoint(src.x - pr.p, src.y - pr.q);
+		possiblePoints[1] = getGraphGridPoint(src.x - pr.p, src.y + pr.q);
+		possiblePoints[2] = getGraphGridPoint(src.x + pr.p, src.y - pr.q);
+		possiblePoints[3] = getGraphGridPoint(src.x + pr.p, src.y + pr.q);
+		possiblePoints[4] = getGraphGridPoint(src.x - pr.q, src.y - pr.p);
+		possiblePoints[5] = getGraphGridPoint(src.x - pr.q, src.y + pr.p);
+		possiblePoints[6] = getGraphGridPoint(src.x + pr.q, src.y - pr.p);
+		possiblePoints[7] = getGraphGridPoint(src.x + pr.q, src.y + pr.p);
 	}
 	
 	private Point getGraphGridPoint(int x, int y) {
@@ -188,4 +216,19 @@ public class GridGraph {
 			this.srcOriginalOwner = srcOriginalOwner;
 		}
 	}
+	
+	public int getNumberOfEdges() {
+		int count = 0;
+
+		Iterator<Entry<Point, HashSet<Point>>> it = edgesByPoint.entrySet().iterator();
+	    while (it.hasNext()) {
+	        Map.Entry<Point, HashSet<Point>> pairs = (Map.Entry<Point, HashSet<Point>>)it.next();
+	        count += pairs.getValue().size();
+	    }
+	    
+		return count / 2;
+	}
+	
+	public int getScore() { return score; }
+
 }
