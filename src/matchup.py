@@ -35,6 +35,9 @@ def run_match(left, right):
         left = left,
         right = right)
 
+    if DEBUG:
+        print command
+
     out, err = Popen(command.split(' '), stdout=PIPE, stderr=PIPE).communicate()
 
     output_lines = err.strip().split('\n')
@@ -59,7 +62,7 @@ def run_all_matches(left_name, right_name, d):
         reruns = tup[2]
 
         left_player = Player(left_name, *pair[0])
-        right_player = Player(left_name, *pair[1])
+        right_player = Player(right_name, *pair[1])
 
         try:
             result = differential(run_match(left_player, right_player))
@@ -80,8 +83,8 @@ def run_all_matches(left_name, right_name, d):
     final_results = [[None for i in range(side)] for j in range(side)]
     for result in pair_results:
         pairs = result[0]
-        row = (pairs[0][1] - pairs[0][0]) / 2
-        col = (pairs[1][1] - pairs[1][0]) / 2
+        row = (pairs[0][1] - pairs[0][0] - 1) / 2
+        col = (pairs[1][1] - pairs[1][0] - 1) / 2
 
         final_results[row][col] = result[1]
 
@@ -96,7 +99,10 @@ def print_heatmap(left_player, right_player, d, results):
     print top_col_spacing + "{}\033[1m{}\033[0m".format(right_color, right_player)
 
     def val(d, i):
-        return d % 2 + 2 * (i + d % 2)
+        if d % 2 == 0:
+            return i * 2
+        else:
+            return i * 2 + 1
 
     val_format = "{:>6}"
     def val_string(d, i):
@@ -105,7 +111,7 @@ def print_heatmap(left_player, right_player, d, results):
     def write_header():
         sys.stdout.write(top_col_spacing)
         for i in range(len(results[0])):
-            sys.stdout.write(val_string(d,i))
+            sys.stdout.write("{:>+6d}".format(val(d,i)))
         print
 
     def score_string(value):
@@ -114,7 +120,7 @@ def print_heatmap(left_player, right_player, d, results):
 
         color = right_color if value > 0 else left_color
         mod = "\033[1m" if abs(value) > 150 else ""
-        return "{}{}{}\033[0m".format(color, mod, val_format.format(abs(value)))
+        return "{}{}{}\033[0m".format(color, mod, val_format.format(value))
 
     def write_row(i, row):
         if i == 0:
