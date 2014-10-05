@@ -1,0 +1,27 @@
+matchup.py
+==========
+matchup.py allows you to see the matchups between
+two different players. it produces output that looks like this:
+
+$ ./matchup.py group6 dumb 7
+              dumb
+                  +1    +3    +5
+ group6     +1        -146  -440
+            +3  -440        -308
+            +5  -440  -102      
+
+How to run it
+-------------
+You run it like this:
+./matchup.py <player1> <player2> <d>
+which will run a matchup between player1 and player2 for
+all possible p-q pairs with d.
+
+How to read it
+--------------
+The output above shows us that player 'dumb' lost all of the matches
+she played. Her closest match was when she lost by only 102, when
+her opponent had a p-q difference of 5 (p=1, q=6) and she had a p-q
+difference of 3 (p=2, q=5).
+
+Matches where the difference in score was > 150 are bolded, so it's extra apparent.
