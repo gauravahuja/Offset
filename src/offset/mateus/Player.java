@@ -1,8 +1,8 @@
 package offset.mateus;
+import offset.common.GridGraph;
 
 import java.util.*;
 
-import offset.group6.GridGraph;
 import offset.sim.Pair;
 import offset.sim.Point;
 import offset.sim.movePair;
