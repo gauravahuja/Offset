@@ -13,9 +13,12 @@ $ ./matchup.py group6 dumb 7
 How to run it
 -------------
 You run it like this:
-./matchup.py <player1> <player2> <d>
-which will run a matchup between player1 and player2 for
+./matchup.py <player> <opponent1> [<opponent2> ...] <d>
+which will run a matchup between player1 and each opponentN for
 all possible p-q pairs with d.
+
+Alternately, you can use the keyword 'all' to matchup player
+against ALL opponents in the folder ./offset/.
 
 How to read it
 --------------
