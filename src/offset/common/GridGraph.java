@@ -15,6 +15,7 @@ public class GridGraph {
 	public ArrayList<HistoryRecord> history;
 	public Pair pr;
 	public int graphPlayerId;
+	public ArrayList<HashMap<Point, Set<Point>>> maps = new ArrayList<HashMap<Point, Set<Point>>>(); 
 	
 	private Point[] possiblePoints = new Point[8];
 	
@@ -41,6 +42,29 @@ public class GridGraph {
 				}
 				
 				addEdge(grid[i], possiblePoints[possibleIndex]);
+			}
+		}
+		
+		// maps code
+		for(int n = 0; n < 8; n++) {
+			maps.add(new HashMap<Point, Set<Point>>());
+		}
+		for(int i = 0; i < SIZE*SIZE; i++) {
+			Point p = grid[i];
+
+			// init combinations
+			Set<Point> possiblePointsSet = new HashSet<Point>();
+			loadPossiblePoints(grid[i], pr);
+			for(int possibleIndex = 0; possibleIndex < possiblePoints.length; possibleIndex++) {
+				if(possiblePoints[possibleIndex] == null) {
+					continue;
+				}
+				
+				possiblePointsSet.add(possiblePoints[possibleIndex]);
+			}
+			
+			for(int n = 0; n < possiblePointsSet.size(); n++) {
+				maps.get(n).put(p, new HashSet<Point>(possiblePointsSet));
 			}
 		}
 	}
@@ -107,8 +131,60 @@ public class GridGraph {
 				addEdge(target, possiblePoints[possibleIndex]);
 			}
 		}
+		
+		// maps code
+		// src cannot construct anything now
+		for(int n = 0; n < 8; n++) {
+			maps.get(n).remove(src);
+			// any construction that would use src is now impossible
+			removeConstructionsThatUsePointAtLevel(src, n);
+		}
+
+		// get targetNewLevel
+		int targetNewLevel = -1;
+		// fast logarithm base 2 for power of 2s
+		while(2 << targetNewLevel < target.value) {
+			targetNewLevel++;
+		}
+		
+		// target at targetNewLevel has already been built
+		maps.get(targetNewLevel).remove(target);
+		// any construction that would use target at targetNewLevel is gone
+		removeConstructionsThatUsePointAtLevel(target, targetNewLevel);
+		
 
 		return this;
+	}
+	
+	private void removeConstructionsThatUsePointAtLevel(Point p, int level) {
+		ArrayList<Point> toBeRemoved = new ArrayList<Point>();
+
+		HashMap<Point, Set<Point>> levelNMap = maps.get(level);
+		
+		loadPossiblePoints(p, pr);
+		for(int possibleIndex = 0; possibleIndex < possiblePoints.length; possibleIndex++) {
+			if(possiblePoints[possibleIndex] == null) {
+				continue;
+			}
+			
+			Set<Point> set = levelNMap.get(possiblePoints[possibleIndex]);
+			if(set != null) {
+				set.remove(p);
+				if(set.size() == 0) {
+					levelNMap.remove(possiblePoints[possibleIndex]);
+					toBeRemoved.add(possiblePoints[possibleIndex]);
+				}
+			}
+		}
+		
+		Iterator<Point> it = toBeRemoved.iterator();
+		while(it.hasNext()) {
+			Point a = it.next();
+			for(int n = level + 1; n < 8; n++) {
+				maps.get(n).remove(a);
+				removeConstructionsThatUsePointAtLevel(a, n);				
+			}
+		}
 	}
 	
 	public GridGraph undoGraphByOneMovePair() {
@@ -272,5 +348,27 @@ public class GridGraph {
 //        }
 //		System.out.printf("\n");
 		return points;
+	}
+	
+	public void printLevelN(int n) {
+		System.out.printf("Level %d\n", n);
+		HashMap<Point, Set<Point>> levelNMap = maps.get(n);
+		if(levelNMap.size() == 0) {
+			System.out.printf("-- Empty --\n");
+			return;
+		}
+		
+		for(int y = 0; y < SIZE; y++) {
+			for(int x = 0; x < SIZE; x++) {
+				Point p = getGraphGridPoint(x, y);
+				
+				if(levelNMap.containsKey(p)) {
+					System.out.printf("(%d, %d)(%d, %d), ", x,y, levelNMap.get(p).iterator().next().x, levelNMap.get(p).iterator().next().y);
+				} else {
+					System.out.printf("0, ");
+				}
+			}
+			System.out.printf("\n");
+		}
 	}
 }

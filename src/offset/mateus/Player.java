@@ -2,6 +2,7 @@ package offset.mateus;
 import offset.common.GridGraph;
 
 import java.util.*;
+import java.util.Map.Entry;
 
 import offset.common.GridGraph;
 import offset.sim.Pair;
@@ -20,9 +21,10 @@ public class Player extends offset.sim.Player {
 	
 	boolean playerInitialized = false;
 
+
 	public Player(Pair prin, int idin) { super(prin, idin);	}
 	public void init() {}
-
+	
 	public movePair move(Point[] grid, Pair pr, Pair pr0, ArrayList<ArrayList> history) {
 		currentGrid = grid;
         
@@ -37,12 +39,23 @@ public class Player extends offset.sim.Player {
         
         // update graphs with adversary last move
         if (history.size() >= 1) {
-            int advId = (int) history.get(history.size() - 1).get(0);
-            if (advId != id) {
-                movePair advLastMovePair = (movePair) history.get(history.size() - 1).get(1);
-                advGridGraph.updateGraphWithMovePair(advLastMovePair, advId);
-                myGridGraph.updateGraphWithMovePair(advLastMovePair, advId);
-            }
+        	// adv might have played more than once in a row
+        	int beginAdvMoveInHistoryIndex = history.size() - 1;
+        	while(beginAdvMoveInHistoryIndex >= 0 && advId == (int) history.get(beginAdvMoveInHistoryIndex).get(0)) {
+        		beginAdvMoveInHistoryIndex--;
+        	}
+        	// went too far
+        	beginAdvMoveInHistoryIndex++;
+        	
+        	// update graphs
+        	for(int i = beginAdvMoveInHistoryIndex; i < history.size(); i++) {
+                movePair advMovePair = (movePair) history.get(i).get(1);
+                if(advMovePair.move == true) {
+                    advGridGraph.updateGraphWithMovePair(advMovePair, advId);
+                    myGridGraph.updateGraphWithMovePair(advMovePair, advId);
+                }
+        	}
+            
         }
         
         movePair movepr = new movePair();
@@ -79,9 +92,14 @@ public class Player extends offset.sim.Player {
         }
         
         if (movepr.move == true) {
-            // update graphs with adversary last move
+            // update graphs with my move
             advGridGraph.updateGraphWithMovePair(movepr, id);
             myGridGraph.updateGraphWithMovePair(movepr, id);
+            
+            for(int n = 0; n < 8; n++) {
+           	 myGridGraph.printLevelN(n);
+           	 System.out.printf("\n");
+            }
         }
         return movepr;
 	}
