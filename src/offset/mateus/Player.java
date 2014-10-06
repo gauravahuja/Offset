@@ -2,7 +2,7 @@ package offset.mateus;
 
 import java.util.*;
 
-import offset.group6.GridGraph;
+import offset.common.GridGraph;
 import offset.sim.Pair;
 import offset.sim.Point;
 import offset.sim.movePair;
@@ -15,6 +15,7 @@ public class Player extends offset.sim.Player {
 	Pair advPair;
 	GridGraph myGridGraph;
 	GridGraph advGridGraph;
+	int advId;
 	
 	boolean playerInitialized = false;
 
@@ -23,53 +24,65 @@ public class Player extends offset.sim.Player {
 
 	public movePair move(Point[] grid, Pair pr, Pair pr0, ArrayList<ArrayList> history) {
 		currentGrid = grid;
-		myPair = pr;
-		advPair = pr0;
+        
+        if (!playerInitialized) {
+            myPair = pr;
+            advPair = pr0;
+            advId = id + 1 % 2;
+            myGridGraph = new GridGraph(pr, id);
+            advGridGraph = new GridGraph(pr0, advId);
+            playerInitialized = true;
+        }
+        
+        // update graphs with adversary last move
+        if (history.size() >= 1) {
+            int advId = (int) history.get(history.size() - 1).get(0);
+            if (advId != id) {
+                movePair advLastMovePair = (movePair) history.get(history.size() - 1).get(1);
+                advGridGraph.updateGraphWithMovePair(advLastMovePair, advId);
+                myGridGraph.updateGraphWithMovePair(advLastMovePair, advId);
+            }
+        }
+        
+        movePair movepr = new movePair();
+        // get a node in adversary graph with max number of edges and higher value
+        ArrayList<Point> pointsByValueByEdges = advGridGraph.getPointsByNumberOfEdgesByValue();
+        for (int i = 0; i < pointsByValueByEdges.size(); i++) {
+        	Point p = pointsByValueByEdges.get(i);
+        	if (myGridGraph.doesPointHasEdges(p)) {
+        		movepr.src = new Point(p);
+                movepr.target = new Point(myGridGraph.edgesByPoint.get(myGridGraph.getGraphGridPoint(p.x, p.y)).iterator().next());
+                movepr.move = true;
+                break;
+    		}
+        }
+        if (movepr.move == false) {
+        	//do half dumb
+        	for (int i = 0; i < SIZE*SIZE; i++) {
+            	Point p = myGridGraph.grid[i];
+            	if (myGridGraph.doesPointHasEdges(p)) {
+            		Point otherP = myGridGraph.edgesByPoint.get(p).iterator().next();
+            		if (advGridGraph.doesPointHasEdges(otherP)) {
+                		movepr.src = new Point(otherP);
+                        movepr.target = new Point(p);
+                        movepr.move = true;            			
+            		} else {
+                		movepr.src = new Point(p);
+                        movepr.target = new Point(otherP);
+                        movepr.move = true;
+            		}
 
-		if (!playerInitialized) {
-			int advId = id + 1 % 2;
-			myGridGraph = new GridGraph(pr, id);
-			advGridGraph = new GridGraph(pr0, advId);
-			playerInitialized = true;
-		}
-		
-		// update graphs with adversary last move
-		if (history.size() >= 1) {
-			int advId = (int) history.get(history.size() - 1).get(0);
-			if (advId != id) {
-				movePair advLastMovePair = (movePair) history.get(history.size() - 1).get(1);
-				advGridGraph.updateGraphWithMovePair(advLastMovePair, advId);
-				myGridGraph.updateGraphWithMovePair(advLastMovePair, advId);
-			}
-		}
-		
-		System.out.printf("Possibles moves for me: %d\n", myGridGraph.getNumberOfEdges());
-		System.out.printf("Possibles moves for adversary: %d\n", advGridGraph.getNumberOfEdges());
-		
-		movePair movepr = new movePair();
-		for (int i = 0; i < SIZE; i++) {
-			for (int j = 0; j < SIZE; j++) {
-				for (int i_pr=0; i_pr<SIZE; i_pr++) {
-					for (int j_pr=0; j_pr <SIZE; j_pr++) {
-						movepr.move = false;
-						movepr.src = grid[i*SIZE+j];
-						movepr.target = grid[i_pr*SIZE+j_pr];
-						if (validateMove(movepr, pr)) {
-							movepr.move = true;
-							// update graphs with adversary last move
-							advGridGraph.updateGraphWithMovePair(movepr, id);
-							myGridGraph.updateGraphWithMovePair(movepr, id);
-							return movepr;
-						}
-					}
-				}
-			}
-		}
-		
-		// update graphs with adversary last move
-		advGridGraph.updateGraphWithMovePair(movepr, id);
-		myGridGraph.updateGraphWithMovePair(movepr, id);
-		return movepr;
+                    break;
+            	}
+            }
+        }
+        
+        if (movepr.move == true) {
+            // update graphs with adversary last move
+            advGridGraph.updateGraphWithMovePair(movepr, id);
+            myGridGraph.updateGraphWithMovePair(movepr, id);
+        }
+        return movepr;
 	}
 
 	boolean validateMove(movePair movepr, Pair pr) {

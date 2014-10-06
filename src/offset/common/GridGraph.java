@@ -196,7 +196,7 @@ public class GridGraph {
 		possiblePoints[7] = getGraphGridPoint(src.x + pr.q, src.y + pr.p);
 	}
 	
-	private Point getGraphGridPoint(int x, int y) {
+	public Point getGraphGridPoint(int x, int y) {
 		if (x < 0 || x >= SIZE || y < 0 || y >= SIZE) {
 			return null;
 		}
@@ -230,5 +230,47 @@ public class GridGraph {
 	}
 	
 	public int getScore() { return score; }
-
+	
+	public boolean doesPointHasEdges(Point p) {
+		HashSet<Point> edges = edgesByPoint.get(getGraphGridPoint(p.x, p.y));
+		return edges.size() != 0;
+	}
+	
+	public class Comparators {
+        public Comparator<Point> VALUE = new Comparator<Point>() {
+            @Override
+            public int compare(Point o1, Point o2) {
+                return o1.value - o2.value;
+            }
+        };
+        public Comparator<Point> EDGES = new Comparator<Point>() {
+            @Override
+            public int compare(Point o1, Point o2) {
+                return edgesByPoint.get(o1).size() - edgesByPoint.get(o2).size();
+            }
+        };
+        public Comparator<Point> EDGESANDVALUE = new Comparator<Point>() {
+            @Override
+            public int compare(Point o1, Point o2) {
+                int i = EDGES.compare(o1, o2);
+                if (i == 0) {
+                    return VALUE.compare(o1, o2);
+                }
+                return i;
+            }
+        };
+    }
+	public Comparators myComparators = new Comparators();
+	
+	
+	public ArrayList<Point> getPointsByNumberOfEdgesByValue() {
+		ArrayList<Point> points = new ArrayList<Point>(Arrays.asList(grid));
+		Collections.sort(points, Collections.reverseOrder(myComparators.EDGESANDVALUE));
+//		for (int i = 0; i < points.size(); i++) {
+//        	Point p = points.get(i);
+//        	System.out.printf("%d-%d, ", edgesByPoint.get(p).size(), p.value);
+//        }
+//		System.out.printf("\n");
+		return points;
+	}
 }
