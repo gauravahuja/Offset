@@ -5,10 +5,14 @@ import re
 from subprocess import Popen, PIPE
 import math
 import sys
+import os
 
 from multiprocessing.pool import ThreadPool
 
 DEBUG = False
+VERBOSE = False
+
+MAX_THREADS = 4
 
 Player = namedtuple('Player', ['name', 'p', 'q'])
 Player.d = lambda self: self.p + self.q
@@ -41,7 +45,8 @@ def run_match(left, right):
     out, err = Popen(command.split(' '), stdout=PIPE, stderr=PIPE).communicate()
 
     output_lines = err.strip().split('\n')
-    print output_lines[-1]
+    if VERBOSE:
+        print output_lines[-1]
     return parse_match_output(output_lines)
 
 def differential(scores):
@@ -51,10 +56,11 @@ def run_all_matches(left_name, right_name, d):
     all_pqs = [(p, d - p) for p in range(1,d-1) if p < d - p]
     pq_pairs = [(pq1, pq2) for pq1 in all_pqs for pq2 in all_pqs if pq1 != pq2 and (pq1[0] != pq2[1])]
 
-    print "Running {} matches...".format(len(pq_pairs))
+    if VERBOSE:
+        print "Running {} matches...".format(len(pq_pairs))
 
     side = int(math.sqrt(len(pq_pairs) + d/2))
-    thread_pool = ThreadPool(8)
+    thread_pool = ThreadPool(MAX_THREADS)
 
     def run_pair(tup):
         i = tup[0]
@@ -137,20 +143,55 @@ def print_heatmap(left_player, right_player, d, results):
     for i, row in enumerate(results):
         write_row(i, row)
 
+    print
+
+def path_to_player(player_name):
+    return os.path.join('.', 'offset', player_name, 'Player.java')
+
+def player_exists(player_name):
+    return os.path.isfile(path_to_player(player_name)) and player_name != 'sim'
+
+def all_players():
+    return [player for player in os.listdir('./offset') if player_exists(player)]
+
 
 def main():
-    if len(sys.argv) != 4:
-        print "Usage: ./{} <left_player> <right_player> <d>"
-        print "Runs all matches with the specified d value, then prints the heatmap for the matchup of these players."
-        sys.exit(1)
+    if len(sys.argv) == 1:
+        print "Players:"
+        for player in all_players():
+            print "\t{}".format(player)
+        return
+    elif len(sys.argv) < 4:
+        print "Forgot to specify d."
+        print "Usage: ./{} <player> <opponent1> [<opponent2> ...] <d>"
+        return 1
 
     left_player  = sys.argv[1]
-    right_player = sys.argv[2]
+    opponents = sys.argv[2:-1]
 
-    d            = int(sys.argv[3])
+    if not os.path.isfile(os.path.join('.', 'offset', left_player, 'Player.java')):
+        print "Player with name {} not found.".format(left_player)
+        sys.exit(1)
 
-    results = run_all_matches(left_player, right_player, d)
-    print_heatmap(left_player, right_player, d, results)
+    if any([o == 'all' for o in opponents]):
+        opponents = all_players()
+
+
+    for opponent in opponents:
+        if not player_exists(opponent):
+            print "Player with name {} not found.".format(opponent)
+            sys.exit(1)
+
+    DEVNULL = open('/dev/null', 'w')
+    out, err = Popen(['make', 'compile'], stdout=DEVNULL, stderr=DEVNULL).communicate()
+
+    d = int(sys.argv[-1])
+
+    for opponent in opponents:
+        if VERBOSE:
+            print 'Playing {} against {}.'.format(left_player, opponent)
+        results = run_all_matches(left_player, opponent, d)
+        print_heatmap(left_player, opponent, d, results)
 
 
 if __name__ == '__main__':
