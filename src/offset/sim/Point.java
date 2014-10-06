@@ -8,7 +8,15 @@ public class Point {
     public int value;
     public int owner;
     public boolean change;
-
+    //new fix
+    public Point(Point o) {
+        this.x = o.x;
+        this.y = o.y;
+        this.value = o.value;
+        this.owner = o.owner;
+        this.change = o.change;
+    }
+    
     public Point() { x = 0; y = 0; value =1; owner = -1;}
 
     public Point(int xx, int yy, int va, int ow) {
