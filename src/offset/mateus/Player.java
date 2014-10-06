@@ -1,4 +1,5 @@
 package offset.mateus;
+import offset.common.GridGraph;
 
 import java.util.*;
 
