@@ -34,7 +34,7 @@ def run_match(left, right):
         return scores
 
     assert(left.d() == right.d())
-    command = '''java offset.sim.Offset {d} {left.name} {right.name} 0 /dev/null {left.p} {left.q} {right.p} {right.q}'''.format(
+    command = '''java offset.altsim.Offset {d} {left.name} {right.name} 0 /dev/null {left.p} {left.q} {right.p} {right.q}'''.format(
         d = left.d(),
         left = left,
         right = right)
