@@ -9,8 +9,8 @@ import os
 
 from multiprocessing.pool import ThreadPool
 
-DEBUG = False
-VERBOSE = False
+DEBUG = True
+VERBOSE = True
 
 MAX_THREADS = 4
 
@@ -34,7 +34,7 @@ def run_match(left, right):
         return scores
 
     assert(left.d() == right.d())
-    command = '''java offset.altsim.Offset {d} {left.name} {right.name} 0 /dev/null {left.p} {left.q} {right.p} {right.q}'''.format(
+    command = '''java offset.sim.AltOffset {d} {left.name} {right.name} 0 /dev/null {left.p} {left.q} {right.p} {right.q}'''.format(
         d = left.d(),
         left = left,
         right = right)
