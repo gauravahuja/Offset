@@ -1,4 +1,4 @@
-package offset.group9;
+package offset.oct6_group9;
 
 import offset.sim.*;
 

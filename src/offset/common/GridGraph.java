@@ -134,23 +134,23 @@ public class GridGraph {
 		
 		// maps code
 		// src cannot construct anything now
-		for(int n = 0; n < 8; n++) {
-			maps.get(n).remove(src);
-			// any construction that would use src is now impossible
-			removeConstructionsThatUsePointAtLevel(src, n);
-		}
-
-		// get targetNewLevel
-		int targetNewLevel = -1;
-		// fast logarithm base 2 for power of 2s
-		while(2 << targetNewLevel < target.value) {
-			targetNewLevel++;
-		}
-		
-		// target at targetNewLevel has already been built
-		maps.get(targetNewLevel).remove(target);
-		// any construction that would use target at targetNewLevel is gone
-		removeConstructionsThatUsePointAtLevel(target, targetNewLevel);
+//		for(int n = 0; n < 8; n++) {
+//			maps.get(n).remove(src);
+//			// any construction that would use src is now impossible
+//			removeConstructionsThatUsePointAtLevel(src, n);
+//		}
+//
+//		// get targetNewLevel
+//		int targetNewLevel = -1;
+//		// fast logarithm base 2 for power of 2s
+//		while(2 << targetNewLevel < target.value) {
+//			targetNewLevel++;
+//		}
+//		
+//		// target at targetNewLevel has already been built
+//		maps.get(targetNewLevel).remove(target);
+//		// any construction that would use target at targetNewLevel is gone
+//		removeConstructionsThatUsePointAtLevel(target, targetNewLevel);
 		
 
 		return this;
@@ -335,6 +335,12 @@ public class GridGraph {
                 return i;
             }
         };
+        public Comparator<MovePairTime> MOVES = new Comparator<MovePairTime>() {
+            @Override
+            public int compare(MovePairTime o1, MovePairTime o2) {
+                return o1.moves - o2.moves;
+            }
+        };
     }
 	public Comparators myComparators = new Comparators();
 	
@@ -371,4 +377,59 @@ public class GridGraph {
 			System.out.printf("\n");
 		}
 	}
+	
+	public class MovePairTime {
+		public movePair movepr;
+		public int moves;
+		
+		public MovePairTime(movePair movepr, int moves) {
+			this.movepr = movepr;
+			this.moves = moves;
+		}
+	}
+	
+	public ArrayList<MovePairTime> movePairByTime() {
+		ArrayList<MovePairTime> list = new ArrayList<MovePairTime>();
+		
+		for(int i = 0; i < SIZE*SIZE; i++) {
+			Point p = grid[i];
+			
+			if(p.value < 4) {
+				continue;
+			}
+
+			MovePairTime mpt = getMovePairTimeOfPoint(p,0);
+			if (mpt == null) {
+				continue;
+			}
+			list.add(mpt);
+		}
+		Collections.sort(list, myComparators.MOVES);
+		return list;
+	}
+
+	public MovePairTime getMovePairTimeOfPoint(Point p, int movesCounter) {
+		loadPossiblePoints(p, pr);
+		for(int possibleIndex = 0; possibleIndex < possiblePoints.length; possibleIndex++) {
+			if(possiblePoints[possibleIndex] == null) {
+				continue;
+			}
+			
+			if(possiblePoints[possibleIndex].value > p.value) {
+				continue;
+			} else if(possiblePoints[possibleIndex].value == p.value) {
+				movePair movepr = new movePair();
+				movepr.src = possiblePoints[possibleIndex];
+				movepr.target = p;
+				MovePairTime mpt = new MovePairTime(movepr, 1);
+				return mpt;
+			} else if(possiblePoints[possibleIndex].value == p.value/2) {
+				return getMovePairTimeOfPoint(possiblePoints[possibleIndex], movesCounter + 1);
+			} else {
+				continue;
+			}
+		}
+		return null;
+	}
+	
 }

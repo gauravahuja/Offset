@@ -1,4 +1,4 @@
-package offset.oct_6_group6_oct1;
+package offset.oct6_group6_oct1;
 
 import java.util.*;
 

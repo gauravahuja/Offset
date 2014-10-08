@@ -18,7 +18,7 @@ public abstract class GridPlayer extends offset.sim.Player {
     boolean playerInitialized = false;
     int minimax_depth;
 
-    public Player(Pair prin, int idin) { super(prin, idin); }
+    public GridPlayer(Pair prin, int idin) { super(prin, idin); }
     public void init() {}
 
     // choose move, assuming graph has already

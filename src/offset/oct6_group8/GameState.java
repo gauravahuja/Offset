@@ -1,4 +1,4 @@
-package offset.group8;
+package offset.oct6_group8;
 
 import java.util.ArrayList;
 import java.util.HashMap;

@@ -1,5 +1,6 @@
 package offset.mateus;
 import offset.common.GridGraph;
+import offset.common.GridGraph.MovePairTime;
 
 import java.util.*;
 import java.util.Map.Entry;
@@ -58,7 +59,82 @@ public class Player extends offset.sim.Player {
             
         }
         
+        ArrayList<MovePairTime> steals = advGridGraph.movePairByTime();
+        ArrayList<MovePairTime> builds = myGridGraph.movePairByTime();
+        
+        MovePairTime bestSteal = null;
+        for(Iterator<MovePairTime> it = steals.iterator(); it.hasNext(); ) {
+        	MovePairTime mpt = it.next();
+        	
+        	if(moveWillCreateAdvMoves(mpt.movepr)) {
+        		continue;
+        	}
+    		bestSteal = mpt;
+        }
+        MovePairTime bestBuild = null;
+        for(Iterator<MovePairTime> it = builds.iterator(); it.hasNext(); ) {
+        	MovePairTime mpt = it.next();
+        	
+        	if(moveWillCreateAdvMoves(mpt.movepr)) {
+        		continue;
+        	}
+    		bestBuild = mpt;
+        }
+        
+        
         movePair movepr = new movePair();
+        if (bestSteal != null && bestBuild != null) {
+        	if (bestSteal.moves == bestBuild.moves) {
+        		//protect
+        		Point myGridPointSrc = myGridGraph.getGraphGridPoint(bestSteal.movepr.src.x, bestSteal.movepr.src.y);
+        		Point myGridPointTarget = myGridGraph.getGraphGridPoint(bestSteal.movepr.target.x, bestSteal.movepr.target.y);
+        		
+        		if(myGridGraph.edgesByPoint.get(myGridPointTarget).size() > 0) {
+        			System.out.printf("Protect 1 - target\n");
+        			Point target = myGridGraph.edgesByPoint.get(myGridPointTarget).iterator().next();
+        			movepr.target = new Point(target);
+        			movepr.src = new Point(myGridPointTarget);
+        			movepr.move = true;
+        		} else if(myGridGraph.edgesByPoint.get(myGridPointSrc).size() > 0) {
+        			System.out.printf("Protect 1 - src\n");
+        			Point target = myGridGraph.edgesByPoint.get(myGridPointSrc).iterator().next();
+        			movepr.target = new Point(target);
+        			movepr.src = new Point(myGridPointSrc);
+        			movepr.move = true;
+        		} else {
+        			System.out.printf("Failed to Protect 1\n");
+        		}
+        	} else if (bestSteal.moves < bestBuild.moves) {
+        		//protect
+        		Point myGridPointSrc = myGridGraph.getGraphGridPoint(bestSteal.movepr.src.x, bestSteal.movepr.src.y);
+        		Point myGridPointTarget = myGridGraph.getGraphGridPoint(bestSteal.movepr.target.x, bestSteal.movepr.target.y);
+        		
+        		if(myGridGraph.edgesByPoint.get(myGridPointTarget).size() > 0) {
+        			System.out.printf("Protect 2 - target\n");
+        			Point target = myGridGraph.edgesByPoint.get(myGridPointTarget).iterator().next();
+        			movepr.target = new Point(target);
+        			movepr.src = new Point(myGridPointTarget);
+        			movepr.move = true;
+        		} else if(myGridGraph.edgesByPoint.get(myGridPointSrc).size() > 0) {
+        			System.out.printf("Protect 2 - src\n");
+        			Point target = myGridGraph.edgesByPoint.get(myGridPointSrc).iterator().next();
+        			movepr.target = new Point(target);
+        			movepr.src = new Point(myGridPointSrc);
+        			movepr.move = true;
+        		} else {
+        			System.out.printf("Failed to Protect 2\n");
+        		}
+        	} else {
+        		//build
+        		movepr.src = bestBuild.movepr.src;
+        		movepr.target = bestBuild.movepr.target;
+        		movepr.move = true;
+        		System.out.printf("Build \n");
+        	}
+        }
+        
+        
+        
         // get a node in adversary graph with max number of edges and higher value
         ArrayList<Point> pointsByValueByEdges = advGridGraph.getPointsByNumberOfEdgesByValue();
         for (int i = 0; i < pointsByValueByEdges.size(); i++) {
@@ -97,5 +173,17 @@ public class Player extends offset.sim.Player {
             myGridGraph.updateGraphWithMovePair(movepr, id);
         }
         return movepr;
+	}
+	
+	public boolean moveWillCreateAdvMoves(movePair movepr) {
+		Point advGridPoint = advGridGraph.getGraphGridPoint(movepr.target.x, movepr.target.y);
+		
+		advGridGraph.updateGraphWithMovePair(movepr, id);
+    	if(advGridGraph.doesPointHasEdges(advGridPoint)) {
+    		advGridGraph.undoGraphByOneMovePair();
+    		return true;
+    	}
+    	advGridGraph.undoGraphByOneMovePair();
+    	return false;
 	}
 }
