@@ -19,6 +19,7 @@ public class Player extends offset.sim.Player {
 	GridGraph myGridGraph;
 	GridGraph advGridGraph;
 	int advId;
+	int lastSeenAdvHistoryIndex = -1;
 	
 	boolean playerInitialized = false;
 
@@ -40,23 +41,25 @@ public class Player extends offset.sim.Player {
         
         // update graphs with adversary last move
         if (history.size() >= 1) {
-        	// adv might have played more than once in a row
-        	int beginAdvMoveInHistoryIndex = history.size() - 1;
-        	while(beginAdvMoveInHistoryIndex >= 0 && advId == (int) history.get(beginAdvMoveInHistoryIndex).get(0)) {
-        		beginAdvMoveInHistoryIndex--;
-        	}
-        	// went too far
-        	beginAdvMoveInHistoryIndex++;
-        	
         	// update graphs
-        	for(int i = beginAdvMoveInHistoryIndex; i < history.size(); i++) {
+        	for(int i = lastSeenAdvHistoryIndex + 1; i < history.size(); i++) {
+        		if (advId != (int) history.get(i).get(0)) {
+        			continue;
+        		}
+        		
                 movePair advMovePair = (movePair) history.get(i).get(1);
                 if(advMovePair.move == true) {
+//                	System.out.printf("New target (%d, %d) %d\n", advMovePair.target.x, advMovePair.target.y, advMovePair.target.value);
                     advGridGraph.updateGraphWithMovePair(advMovePair, advId);
                     myGridGraph.updateGraphWithMovePair(advMovePair, advId);
                 }
         	}
-            
+            lastSeenAdvHistoryIndex = history.size() -1;
+        }
+        for(int i = 0; i < SIZE*SIZE; i++) {
+        	if(grid[i].value != myGridGraph.grid[i].value) {
+        		System.out.printf("BUG! (%d, %d) %d != %d", i/SIZE, i%SIZE, grid[i].value, myGridGraph.grid[i].value);
+        	}
         }
         
         ArrayList<MovePairTime> steals = advGridGraph.movePairByTime();
@@ -104,19 +107,19 @@ public class Player extends offset.sim.Player {
         		Point myGridPointTarget = myGridGraph.getGraphGridPoint(bestSteal.movepr.target.x, bestSteal.movepr.target.y);
         		
         		if(myGridGraph.edgesByPoint.get(myGridPointTarget).size() > 0) {
-//        			System.out.printf("Protect 1 - target\n");
+        			System.out.printf("Protect 1 - target\n");
         			Point targetNeighbor = myGridGraph.edgesByPoint.get(myGridPointTarget).iterator().next();
         			movepr.target = new Point(targetNeighbor);
         			movepr.src = new Point(myGridPointTarget);
         			movepr.move = true;
         		} else if(myGridGraph.edgesByPoint.get(myGridPointSrc).size() > 0) {
-//        			System.out.printf("Protect 1 - src\n");
+        			System.out.printf("Protect 1 - src\n");
         			Point srcNeighbor = myGridGraph.edgesByPoint.get(myGridPointSrc).iterator().next();
         			movepr.target = new Point(srcNeighbor);
         			movepr.src = new Point(myGridPointSrc);
         			movepr.move = true;
         		} else {
-//        			System.out.printf("Failed to Protect 1\n");
+        			System.out.printf("Failed to Protect 1\n");
         			
         			// TODO play with this part: what if we cannot protect a steal?
         			if(bestBuild != null) {
@@ -130,7 +133,7 @@ public class Player extends offset.sim.Player {
         		movepr.src = new Point(bestBuild.movepr.src);
         		movepr.target = new Point(bestBuild.movepr.target);
         		movepr.move = true;
-//        		System.out.printf("Build (%d, %d) -> (%d, %d) (%d+%d) moves %d\n", movepr.src.x, movepr.src.y, movepr.target.x, movepr.target.y, movepr.src.value, movepr.target.value,bestBuild.moves);
+        		System.out.printf("Build (%d, %d) -> (%d, %d) (%d+%d) moves %d\n", movepr.src.x, movepr.src.y, movepr.target.x, movepr.target.y, movepr.src.value, movepr.target.value,bestBuild.moves);
 //        		System.out.printf("Confirm values %d = %d && %d = %d\n", grid[32*movepr.src.x + movepr.src.y].value, movepr.src.value,grid[32*movepr.target.x + movepr.target.y].value, movepr.target.value);
 	        }
         }
@@ -138,10 +141,11 @@ public class Player extends offset.sim.Player {
         // TODO play with this part: what to do when previous strategy didn't find anything good
         // get a node in adversary graph with max number of edges and higher value
         if(movepr.move == false) {
-//        	System.out.printf("Remove edges\n");
+        	System.out.printf("Remove edges\n");
         	ArrayList<Point> pointsByValueByEdges = advGridGraph.getPointsByNumberOfEdgesByValue();
             for (int i = 0; i < pointsByValueByEdges.size(); i++) {
             	Point p = pointsByValueByEdges.get(i);
+//            	System.out.printf("(%d,%d) %d\n", p.x, p.y, p.value);
             	if (myGridGraph.doesPointHasEdges(p)) {
             		movepr.src = new Point(p);
                     movepr.target = new Point(myGridGraph.edgesByPoint.get(myGridGraph.getGraphGridPoint(p.x, p.y)).iterator().next());
@@ -152,7 +156,7 @@ public class Player extends offset.sim.Player {
         }
         if (movepr.move == false) {
         	//do half dumb
-//        	System.out.printf("Last option\n");
+        	System.out.printf("Last option\n");
         	for (int i = 0; i < SIZE*SIZE; i++) {
             	Point p = myGridGraph.grid[i];
             	if (myGridGraph.doesPointHasEdges(p)) {
@@ -176,7 +180,8 @@ public class Player extends offset.sim.Player {
             // update graphs with my move
             advGridGraph.updateGraphWithMovePair(movepr, id);
             myGridGraph.updateGraphWithMovePair(movepr, id);
-//            System.out.printf("Moving (%d, %d) -> (%d, %d) (%d+%d)\n", movepr.src.x, movepr.src.y, movepr.target.x, movepr.target.y, movepr.src.value, movepr.target.value);
+            System.out.printf("Moving (%d, %d) -> (%d, %d) (%d+%d)\n", movepr.src.x, movepr.src.y, movepr.target.x, movepr.target.y, movepr.src.value, movepr.target.value);
+//            System.out.printf("Confirm values %d = %d && %d = %d\n", grid[32*movepr.src.x + movepr.src.y].value, movepr.src.value,grid[32*movepr.target.x + movepr.target.y].value, movepr.target.value);
         }
         return movepr;
 	}

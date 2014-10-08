@@ -346,7 +346,13 @@ public class GridGraph {
 	
 	
 	public ArrayList<Point> getPointsByNumberOfEdgesByValue() {
-		ArrayList<Point> points = new ArrayList<Point>(Arrays.asList(grid));
+		ArrayList<Point> points = new ArrayList<Point>(SIZE*SIZE);
+		for(int i = 0; i < SIZE*SIZE; i++) {
+			if(grid[i].value == 0) {
+				continue;
+			}
+			points.add(grid[i]);
+		}
 		Collections.sort(points, Collections.reverseOrder(myComparators.EDGESANDVALUE));
 //		for (int i = 0; i < points.size(); i++) {
 //        	Point p = points.get(i);
