@@ -397,6 +397,9 @@ public class AltOffset
         src.owner = -1;
         src.change = true;
         target.change = true;
+        //new fix
+        grid[src.x*size + src.y] = src;
+        grid[target.x*size + target.y] = target;
     	}
     }
     public int calculatescore(int id) {
@@ -443,7 +446,7 @@ public class AltOffset
 
     }
 
- /*   static Point[] copyPointArray(Point[] points) {
+    static Point[] copyPointArray(Point[] points) {
         Point[] npoints = new Point[points.length];
         for (int p = 0; p < points.length; ++p)
             npoints[p] = new Point(points[p]);
@@ -451,22 +454,22 @@ public class AltOffset
         return npoints;
     }
 
-*/
+
     void playStep() {
         tick++;  
         movePair next;
         int currentplayer;
         Pair currentPr;
-        
+        Point[] copygrid = copyPointArray(grid);
         
         if (tick % 2 == 1) {
-        	next = player0.move(grid, p0, p1, history);
+        	next = player0.move(copygrid, p0, p1, history);
         	currentPr = p0;
         	currentplayer = 0;
         	counter = 0;
         }
         else {
-        	next = player1.move(grid, p1, p0, history);
+        	next = player1.move(copygrid, p1, p0, history);
         	currentPr = p1;
         	currentplayer =1;
         }
