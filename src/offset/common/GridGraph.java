@@ -400,7 +400,7 @@ public class GridGraph {
 		for(int i = 0; i < SIZE*SIZE; i++) {
 			Point p = grid[i];
 			
-			// TODO play with this number
+			// TODO play with this number: shoudl we worry about piles of value 1 and 2?
 			if(p.value < 4) {
 				continue;
 			}

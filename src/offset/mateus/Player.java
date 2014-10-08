@@ -206,6 +206,11 @@ public class Player extends offset.sim.Player {
 	public boolean moveWillCreateAdvMoves(movePair movepr) {
 		Point advGridPoint = advGridGraph.getGraphGridPoint(movepr.target.x, movepr.target.y);
 		
+		// TODO play with this value: ignore if we will create a stealiable pile of value 2
+		if(movepr.target.value == 1) {
+			return false;
+		}
+		
 		advGridGraph.updateGraphWithMovePair(movepr, id);
     	if(advGridGraph.doesPointHasEdges(advGridPoint)) {
     		advGridGraph.undoGraphByOneMovePair();
