@@ -56,9 +56,16 @@ public class Player extends offset.sim.Player {
         	}
             lastSeenAdvHistoryIndex = history.size() -1;
         }
+        // SANITY CHECK
         for(int i = 0; i < SIZE*SIZE; i++) {
         	if(grid[i].value != myGridGraph.grid[i].value) {
         		System.out.printf("BUG! (%d, %d) %d != %d", i/SIZE, i%SIZE, grid[i].value, myGridGraph.grid[i].value);
+        		try {
+					Thread.sleep(2000);
+				} catch (InterruptedException e) {
+					// TODO Auto-generated catch block
+					e.printStackTrace();
+				}
         	}
         }
         
