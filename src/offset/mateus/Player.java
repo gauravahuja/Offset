@@ -1,5 +1,6 @@
 package offset.mateus;
 import offset.common.GridGraph;
+import offset.common.GridGraph.Comparators;
 import offset.common.GridGraph.PointPath;
 
 import java.util.*;
@@ -234,6 +235,7 @@ public class Player extends offset.sim.Player {
         if(movepr.move == false) {
         	System.out.printf("Remove edges\n");
         	ArrayList<Point> pointsByValueByEdges = advGridGraph.getPointsByNumberOfEdgesByValue();
+        	Collections.sort(pointsByValueByEdges, Collections.reverseOrder(myComparators.SMARTEDGES));
             for (int i = 0; i < pointsByValueByEdges.size(); i++) {
             	Point p = pointsByValueByEdges.get(i);
 //            	System.out.printf("(%d,%d) %d\n", p.x, p.y, p.value);
@@ -293,4 +295,18 @@ public class Player extends offset.sim.Player {
     	advGridGraph.undoGraphByOneMovePair();
     	return false;
 	}
+	
+	public class Comparators {
+        public Comparator<Point> SMARTEDGES = new Comparator<Point>() {
+            @Override
+            public int compare(Point o1, Point o2) {
+                int diff = (advGridGraph.getEdgesFromPoint(o1).size() - advGridGraph.getEdgesFromPoint(o2).size());
+                if (diff == 0) {
+                	return (myGridGraph.getEdgesFromPoint(o2).size() - myGridGraph.getEdgesFromPoint(o1).size());
+                }
+                return diff;
+            }
+        };
+    }
+	public Comparators myComparators = new Comparators();
 }
