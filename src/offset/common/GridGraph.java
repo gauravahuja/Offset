@@ -394,6 +394,7 @@ public class GridGraph {
 		for(int i = 0; i < SIZE*SIZE; i++) {
 			Point p = grid[i];
 			
+			// TODO play with this number
 			if(p.value < 4) {
 				continue;
 			}
@@ -409,6 +410,7 @@ public class GridGraph {
 	}
 
 	public MovePairTime getMovePairTimeOfPoint(Point p, int movesCounter) {
+//		System.out.printf("getMovePairTimeOfPoint %d\n", p.value);
 		loadPossiblePoints(p, pr);
 		for(int possibleIndex = 0; possibleIndex < possiblePoints.length; possibleIndex++) {
 			if(possiblePoints[possibleIndex] == null) {
@@ -421,9 +423,9 @@ public class GridGraph {
 				movePair movepr = new movePair();
 				movepr.src = possiblePoints[possibleIndex];
 				movepr.target = p;
-				MovePairTime mpt = new MovePairTime(movepr, 1);
+				MovePairTime mpt = new MovePairTime(movepr, movesCounter+1);
 				return mpt;
-			} else if(possiblePoints[possibleIndex].value == p.value/2) {
+			} else if(possiblePoints[possibleIndex].value == p.value/2 && possiblePoints[possibleIndex].value != 0) {
 				return getMovePairTimeOfPoint(possiblePoints[possibleIndex], movesCounter + 1);
 			} else {
 				continue;

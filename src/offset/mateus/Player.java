@@ -62,92 +62,87 @@ public class Player extends offset.sim.Player {
         ArrayList<MovePairTime> steals = advGridGraph.movePairByTime();
         ArrayList<MovePairTime> builds = myGridGraph.movePairByTime();
         
-        MovePairTime bestSteal = null;
-        for(Iterator<MovePairTime> it = steals.iterator(); it.hasNext(); ) {
-        	MovePairTime mpt = it.next();
-        	
-        	if(moveWillCreateAdvMoves(mpt.movepr)) {
-        		continue;
-        	}
-    		bestSteal = mpt;
-        }
-        MovePairTime bestBuild = null;
-        for(Iterator<MovePairTime> it = builds.iterator(); it.hasNext(); ) {
-        	MovePairTime mpt = it.next();
-        	
-        	if(moveWillCreateAdvMoves(mpt.movepr)) {
-        		continue;
-        	}
-    		bestBuild = mpt;
-        }
-        
-        
         movePair movepr = new movePair();
-        if (bestSteal != null && bestBuild != null) {
-        	if (bestSteal.moves == bestBuild.moves) {
-        		//protect
-        		Point myGridPointSrc = myGridGraph.getGraphGridPoint(bestSteal.movepr.src.x, bestSteal.movepr.src.y);
-        		Point myGridPointTarget = myGridGraph.getGraphGridPoint(bestSteal.movepr.target.x, bestSteal.movepr.target.y);
-        		
-        		if(myGridGraph.edgesByPoint.get(myGridPointTarget).size() > 0) {
-        			System.out.printf("Protect 1 - target\n");
-        			Point target = myGridGraph.edgesByPoint.get(myGridPointTarget).iterator().next();
-        			movepr.target = new Point(target);
-        			movepr.src = new Point(myGridPointTarget);
-        			movepr.move = true;
-        		} else if(myGridGraph.edgesByPoint.get(myGridPointSrc).size() > 0) {
-        			System.out.printf("Protect 1 - src\n");
-        			Point target = myGridGraph.edgesByPoint.get(myGridPointSrc).iterator().next();
-        			movepr.target = new Point(target);
-        			movepr.src = new Point(myGridPointSrc);
-        			movepr.move = true;
-        		} else {
-        			System.out.printf("Failed to Protect 1\n");
-        		}
-        	} else if (bestSteal.moves < bestBuild.moves) {
-        		//protect
-        		Point myGridPointSrc = myGridGraph.getGraphGridPoint(bestSteal.movepr.src.x, bestSteal.movepr.src.y);
-        		Point myGridPointTarget = myGridGraph.getGraphGridPoint(bestSteal.movepr.target.x, bestSteal.movepr.target.y);
-        		
-        		if(myGridGraph.edgesByPoint.get(myGridPointTarget).size() > 0) {
-        			System.out.printf("Protect 2 - target\n");
-        			Point target = myGridGraph.edgesByPoint.get(myGridPointTarget).iterator().next();
-        			movepr.target = new Point(target);
-        			movepr.src = new Point(myGridPointTarget);
-        			movepr.move = true;
-        		} else if(myGridGraph.edgesByPoint.get(myGridPointSrc).size() > 0) {
-        			System.out.printf("Protect 2 - src\n");
-        			Point target = myGridGraph.edgesByPoint.get(myGridPointSrc).iterator().next();
-        			movepr.target = new Point(target);
-        			movepr.src = new Point(myGridPointSrc);
-        			movepr.move = true;
-        		} else {
-        			System.out.printf("Failed to Protect 2\n");
-        		}
-        	} else {
-        		//build
-        		movepr.src = bestBuild.movepr.src;
-        		movepr.target = bestBuild.movepr.target;
-        		movepr.move = true;
-        		System.out.printf("Build \n");
+        Iterator<MovePairTime> stealIt = steals.iterator();
+        Iterator<MovePairTime> buildIt = builds.iterator();
+        MovePairTime bestSteal = null;
+        MovePairTime bestBuild = null;
+        while(movepr.move == false && (stealIt.hasNext() || buildIt.hasNext())) {
+        	boolean isBuild = false;
+        	boolean isSteal = false;
+        	if (stealIt.hasNext()) {
+	        	bestSteal = stealIt.next();
+	        	if(moveWillCreateAdvMoves(bestSteal.movepr)) {
+	        		continue;
+	        	}
         	}
+        	if (buildIt.hasNext()) {
+	        	bestBuild = buildIt.next();
+	        	if(moveWillCreateAdvMoves(bestBuild.movepr)) {
+	        		continue;
+	        	}
+        	}
+        	
+	        if (bestSteal != null && bestBuild != null) {
+	        	//System.out.printf("bs %d bb %d\n", bestSteal.moves, bestBuild.moves);
+	        	if (bestSteal.moves <= bestBuild.moves) {
+	        		isSteal = true;
+	        	} else {
+	        		isBuild = true;
+	        	}
+	        } else if(bestBuild != null) {
+	        	isBuild = true;
+    		} else if(bestSteal != null) {
+	        	isSteal = true;
+	        }
+	        
+	        if(isSteal) {
+	        	//protect
+        		Point myGridPointSrc = myGridGraph.getGraphGridPoint(bestSteal.movepr.src.x, bestSteal.movepr.src.y);
+        		Point myGridPointTarget = myGridGraph.getGraphGridPoint(bestSteal.movepr.target.x, bestSteal.movepr.target.y);
+        		
+        		if(myGridGraph.edgesByPoint.get(myGridPointTarget).size() > 0) {
+//        			System.out.printf("Protect 1 - target\n");
+        			Point target = myGridGraph.edgesByPoint.get(myGridPointTarget).iterator().next();
+        			movepr.target = new Point(target);
+        			movepr.src = new Point(myGridPointTarget);
+        			movepr.move = true;
+        		} else if(myGridGraph.edgesByPoint.get(myGridPointSrc).size() > 0) {
+//        			System.out.printf("Protect 1 - src\n");
+        			Point target = myGridGraph.edgesByPoint.get(myGridPointSrc).iterator().next();
+        			movepr.target = new Point(target);
+        			movepr.src = new Point(myGridPointSrc);
+        			movepr.move = true;
+        		} else {
+//        			System.out.printf("Failed to Protect 1\n");
+        		}
+	        } else if (isBuild) {
+	        	//build
+        		movepr.src = new Point(bestBuild.movepr.src);
+        		movepr.target = new Point(bestBuild.movepr.target);
+        		movepr.move = true;
+//        		System.out.printf("Build (%d, %d) -> (%d, %d) (%d+%d) moves %d\n", movepr.src.x, movepr.src.y, movepr.target.x, movepr.target.y, movepr.src.value, movepr.target.value,bestBuild.moves);
+//        		System.out.printf("Confirm values %d = %d && %d = %d\n", grid[32*movepr.src.x + movepr.src.y].value, movepr.src.value,grid[32*movepr.target.x + movepr.target.y].value, movepr.target.value);
+	        }
         }
-        
-        
         
         // get a node in adversary graph with max number of edges and higher value
-        ArrayList<Point> pointsByValueByEdges = advGridGraph.getPointsByNumberOfEdgesByValue();
-        for (int i = 0; i < pointsByValueByEdges.size(); i++) {
-        	Point p = pointsByValueByEdges.get(i);
-        	if (myGridGraph.doesPointHasEdges(p)) {
-        		movepr.src = new Point(p);
-                movepr.target = new Point(myGridGraph.edgesByPoint.get(myGridGraph.getGraphGridPoint(p.x, p.y)).iterator().next());
-                movepr.move = true;
-                break;
-    		}
+        if(movepr.move == false) {
+//        	System.out.printf("Remove edges\n");
+        	ArrayList<Point> pointsByValueByEdges = advGridGraph.getPointsByNumberOfEdgesByValue();
+            for (int i = 0; i < pointsByValueByEdges.size(); i++) {
+            	Point p = pointsByValueByEdges.get(i);
+            	if (myGridGraph.doesPointHasEdges(p)) {
+            		movepr.src = new Point(p);
+                    movepr.target = new Point(myGridGraph.edgesByPoint.get(myGridGraph.getGraphGridPoint(p.x, p.y)).iterator().next());
+                    movepr.move = true;
+                    break;
+        		}
+            }
         }
         if (movepr.move == false) {
         	//do half dumb
+//        	System.out.printf("Last option\n");
         	for (int i = 0; i < SIZE*SIZE; i++) {
             	Point p = myGridGraph.grid[i];
             	if (myGridGraph.doesPointHasEdges(p)) {
@@ -171,6 +166,7 @@ public class Player extends offset.sim.Player {
             // update graphs with my move
             advGridGraph.updateGraphWithMovePair(movepr, id);
             myGridGraph.updateGraphWithMovePair(movepr, id);
+//            System.out.printf("Moving (%d, %d) -> (%d, %d) (%d+%d)\n", movepr.src.x, movepr.src.y, movepr.target.x, movepr.target.y, movepr.src.value, movepr.target.value);
         }
         return movepr;
 	}
