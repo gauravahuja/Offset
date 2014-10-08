@@ -41,6 +41,16 @@ public class Player extends offset.sim.Player {
         
         // update graphs with adversary last move
         if (history.size() >= 1) {
+        	// SANITY CHECK
+        	if (lastSeenAdvHistoryIndex > history.size() - 1) {
+        		System.out.printf("BUG! history smaller than before\n");
+        		try {
+					Thread.sleep(2000);
+				} catch (InterruptedException e) {
+					// TODO Auto-generated catch block
+					e.printStackTrace();
+				}
+        	}
         	// update graphs
         	for(int i = lastSeenAdvHistoryIndex + 1; i < history.size(); i++) {
         		if (advId != (int) history.get(i).get(0)) {
