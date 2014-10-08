@@ -65,22 +65,24 @@ public class Player extends offset.sim.Player {
         movePair movepr = new movePair();
         Iterator<MovePairTime> stealIt = steals.iterator();
         Iterator<MovePairTime> buildIt = builds.iterator();
-        MovePairTime bestSteal = null;
-        MovePairTime bestBuild = null;
         while(movepr.move == false && (stealIt.hasNext() || buildIt.hasNext())) {
+        	MovePairTime bestSteal = null;
+            MovePairTime bestBuild = null;
         	boolean isBuild = false;
         	boolean isSteal = false;
-        	if (stealIt.hasNext()) {
+        	while (stealIt.hasNext()) {
 	        	bestSteal = stealIt.next();
-	        	if(moveWillCreateAdvMoves(bestSteal.movepr)) {
-	        		continue;
+	        	if(!moveWillCreateAdvMoves(bestSteal.movepr)) {
+	        		break;
 	        	}
+	        	bestSteal = null;
         	}
-        	if (buildIt.hasNext()) {
+        	while (buildIt.hasNext()) {
 	        	bestBuild = buildIt.next();
-	        	if(moveWillCreateAdvMoves(bestBuild.movepr)) {
-	        		continue;
+	        	if(!moveWillCreateAdvMoves(bestBuild.movepr)) {
+	        		break;
 	        	}
+	        	bestBuild = null;
         	}
         	
 	        if (bestSteal != null && bestBuild != null) {
@@ -103,18 +105,25 @@ public class Player extends offset.sim.Player {
         		
         		if(myGridGraph.edgesByPoint.get(myGridPointTarget).size() > 0) {
 //        			System.out.printf("Protect 1 - target\n");
-        			Point target = myGridGraph.edgesByPoint.get(myGridPointTarget).iterator().next();
-        			movepr.target = new Point(target);
+        			Point targetNeighbor = myGridGraph.edgesByPoint.get(myGridPointTarget).iterator().next();
+        			movepr.target = new Point(targetNeighbor);
         			movepr.src = new Point(myGridPointTarget);
         			movepr.move = true;
         		} else if(myGridGraph.edgesByPoint.get(myGridPointSrc).size() > 0) {
 //        			System.out.printf("Protect 1 - src\n");
-        			Point target = myGridGraph.edgesByPoint.get(myGridPointSrc).iterator().next();
-        			movepr.target = new Point(target);
+        			Point srcNeighbor = myGridGraph.edgesByPoint.get(myGridPointSrc).iterator().next();
+        			movepr.target = new Point(srcNeighbor);
         			movepr.src = new Point(myGridPointSrc);
         			movepr.move = true;
         		} else {
 //        			System.out.printf("Failed to Protect 1\n");
+        			
+        			// TODO play with this part: what if we cannot protect a steal?
+        			if(bestBuild != null) {
+        				movepr.src = new Point(bestBuild.movepr.src);
+                		movepr.target = new Point(bestBuild.movepr.target);
+                		movepr.move = true;
+        			}
         		}
 	        } else if (isBuild) {
 	        	//build
@@ -126,6 +135,7 @@ public class Player extends offset.sim.Player {
 	        }
         }
         
+        // TODO play with this part: what to do when previous strategy didn't find anything good
         // get a node in adversary graph with max number of edges and higher value
         if(movepr.move == false) {
 //        	System.out.printf("Remove edges\n");
