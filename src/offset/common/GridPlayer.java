@@ -9,14 +9,14 @@ import offset.sim.movePair;
 public abstract class GridPlayer extends offset.sim.Player {
     static final int SIZE = 32;
     
-    Point[] currentGrid;
-    Pair myPair;
-    Pair advPair;
-    GridGraph myGridGraph;
-    GridGraph advGridGraph;
-    int advId;
-    boolean playerInitialized = false;
-    int minimax_depth;
+    protected Point[] currentGrid;
+    protected Pair myPair;
+    protected Pair advPair;
+    protected GridGraph myGridGraph;
+    protected GridGraph advGridGraph;
+    protected int advId;
+    protected boolean playerInitialized = false;
+    protected int minimax_depth;
 
     public GridPlayer(Pair prin, int idin) { super(prin, idin); }
     public void init() {}
