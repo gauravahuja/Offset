@@ -382,6 +382,17 @@ public class GridGraph {
 		return points;
 	}
 	
+	public ArrayList<Point> getPointsDifferentThanZero() {
+		ArrayList<Point> points = new ArrayList<Point>(SIZE*SIZE);
+		for(int i = 0; i < SIZE*SIZE; i++) {
+			if(grid[i].value == 0) {
+				continue;
+			}
+			points.add(grid[i]);
+		}
+		return points;
+	}
+	
 	public void printLevelN(int n) {
 		System.out.printf("Level %d\n", n);
 		HashMap<Point, Set<Point>> levelNMap = maps.get(n);

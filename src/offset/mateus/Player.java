@@ -81,6 +81,8 @@ public class Player extends offset.sim.Player {
         	}
         }
         
+        
+        
         ArrayList<PointPath> steals = advGridGraph.movePairByTime();
         ArrayList<PointPath> builds = myGridGraph.movePairByTime();
         
@@ -92,16 +94,14 @@ public class Player extends offset.sim.Player {
             PointPath bestBuild = null;
         	boolean isBuild = false;
         	boolean isSteal = false;
-        	while (stealIt.hasNext()) {
+        	while (bestSteal == null && stealIt.hasNext()) {
 	        	bestSteal = stealIt.next();
-	        	if (bestSteal.src.owner == id) {
-	        		break;
+	        	if (bestSteal.src.owner != id) {
+	        		bestSteal = null;
 	        	}
-	        	bestSteal = null;
         	}
-        	while (buildIt.hasNext()) {
+        	while (bestBuild == null && buildIt.hasNext()) {
 	        	bestBuild = buildIt.next();
-	        	break;
         	}
         	
 	        if (bestSteal != null && bestBuild != null) {
@@ -184,15 +184,9 @@ public class Player extends offset.sim.Player {
         		
         		if(movepr.move == false) {
         			System.out.printf("Failed to Protect (%d, %d) v(%d) m(%d)\n", bestSteal.src.x, bestSteal.src.y, bestSteal.src.value, bestSteal.moves);
+        			// try a different bestSteal
+        			bestSteal = null;
         		}
-        		
-//        		System.out.printf("begin path %d\n", bestSteal.path.size());
-//	    		Iterator<Point> it2 = bestSteal.path.iterator();
-//	    		while(it2.hasNext()) {
-//	    			Point p = it2.next();
-//	    			System.out.printf("(%d,%d) v(%d),", p.x,p.y, p.value);
-//	    		}	
-//	    		System.out.printf("\n");
 	        } else if (isBuild) {
 	        	//build
 	        	Point src = bestBuild.path.get(bestBuild.path.size() - 1);
@@ -212,43 +206,89 @@ public class Player extends offset.sim.Player {
 	        	if (src.value <= 2 || targetHasHigherValueNeighbor) {
 	        		movepr.src = new Point(src);
 	        		movepr.target = new Point(target);
-	        		movepr.move = true;
-
-		        	movepr.src.x = movepr.src.x;
-		        	bestBuild.moves = bestBuild.moves;
-	        		System.out.printf("Build (%d, %d) -> (%d, %d) (%d+%d) moves %d\n", movepr.src.x, movepr.src.y, movepr.target.x, movepr.target.y, movepr.src.value, movepr.target.value,bestBuild.moves);
-//		        	System.out.printf("Confirm values %d = %d && %d = %d\n", grid[32*movepr.src.x + movepr.src.y].value, movepr.src.value,grid[32*movepr.target.x + movepr.target.y].value, movepr.target.value);
+	        		if(!moveWillCreateAdvMoves(movepr)) {
+	        			movepr.move = true;
+	        			
+	        			System.out.printf("Build (%d, %d) -> (%d, %d) (%d+%d) moves %d\n", movepr.src.x, movepr.src.y, movepr.target.x, movepr.target.y, movepr.src.value, movepr.target.value,bestBuild.moves);
+//		        		System.out.printf("Confirm values %d = %d && %d = %d\n", grid[32*movepr.src.x + movepr.src.y].value, movepr.src.value,grid[32*movepr.target.x + movepr.target.y].value, movepr.target.value);
+	        		}
 	        	}
-//        		
-//	        	System.out.printf("begin path %d\n", bestBuild.path.size());
-//	    		Iterator<Point> it = bestBuild.path.iterator();
-//	    		while(it.hasNext()) {
-//	    			Point p = it.next();
-//	    			System.out.printf("(%d,%d) v(%d),", p.x,p.y, p.value);
-//	    		}	
-//	    		System.out.printf("\n");
+	        	if(movepr.move == false) {
+//        			System.out.printf("Failed to Protect (%d, %d) v(%d) m(%d)\n", bestSteal.src.x, bestSteal.src.y, bestSteal.src.value, bestSteal.moves);
+        			// try a different bestBuild
+	        		bestBuild = null;
+        		}
         	}
         }
         
         // TODO play with this part: what to do when previous strategy didn't find anything good
         // get a node in adversary graph with max number of edges and higher value
         if(movepr.move == false) {
-        	System.out.printf("Remove edges\n");
-        	ArrayList<Point> pointsByValueByEdges = advGridGraph.getPointsByNumberOfEdgesByValue();
-        	Collections.sort(pointsByValueByEdges, Collections.reverseOrder(myComparators.SMARTEDGES));
-            for (int i = 0; i < pointsByValueByEdges.size(); i++) {
-            	Point p = pointsByValueByEdges.get(i);
-//            	System.out.printf("(%d,%d) %d\n", p.x, p.y, p.value);
-            	if (myGridGraph.doesPointHasEdges(p)) {
-            		movepr.src = new Point(p);
-                    movepr.target = new Point(myGridGraph.edgesByPoint.get(myGridGraph.getGraphGridPoint(p.x, p.y)).iterator().next());
-                    movepr.move = true;
-                    break;
+        	List<Point> pointsByEdges = advGridGraph.getPointsDifferentThanZero();
+        	Collections.sort(pointsByEdges, Collections.reverseOrder(myComparators.SMARTEDGES_AND_VALUE));
+        	Iterator<Point> it = pointsByEdges.iterator();
+    		while(movepr.move == false && it.hasNext()) {
+    			Point srcN = it.next();
+    			
+//    			if(myGridGraph.getEdgesFromPoint(srcN).size() >= advGridGraph.getEdgesFromPoint(srcN).size()) {
+//    				continue;
+//    			}
+    			
+            	HashSet<Point> edges = myGridGraph.getEdgesFromPoint(srcN);
+    			Iterator<Point> possibleTargets = edges.iterator();
+    			while(movepr.move == false && possibleTargets.hasNext()) {
+    				Point aTarget = possibleTargets.next();
+    				
+    				movepr.src = new Point(srcN);
+    				movepr.target = new Point(aTarget);
+    				if(!moveWillCreateAdvMoves(movepr)) {
+    					movepr.move = true;
+    					System.out.printf("Remove edges (%d, %d) -> (%d, %d) (%d+%d) edges from src %d\n", movepr.src.x, movepr.src.y, movepr.target.x, movepr.target.y, movepr.src.value, movepr.target.value, advGridGraph.getEdgesFromPoint(movepr.src).size());
+    					break;
+    				}
+    			}
+            }
+        }
+        if (movepr.move == false) {
+        	// build second phase
+        	buildIt = builds.iterator();
+            while(movepr.move == false && buildIt.hasNext()) {
+            	PointPath bestBuild = buildIt.next();
+            	
+            	Point src = bestBuild.path.get(bestBuild.path.size() - 1);
+        		Point target = bestBuild.path.get(bestBuild.path.size() - 2);
+        		
+        		movepr.src = new Point(src);
+        		movepr.target = new Point(target);
+        		if(!moveWillCreateAdvMoves(movepr)) {
+        			movepr.move = true;
+        			System.out.printf("Build Phase 2 (%d, %d) -> (%d, %d) (%d+%d) moves %d\n", movepr.src.x, movepr.src.y, movepr.target.x, movepr.target.y, movepr.src.value, movepr.target.value,bestBuild.moves);
+//		        		System.out.printf("Confirm values %d = %d && %d = %d\n", grid[32*movepr.src.x + movepr.src.y].value, movepr.src.value,grid[32*movepr.target.x + movepr.target.y].value, movepr.target.value);
         		}
             }
         }
         if (movepr.move == false) {
-        	//do half dumb
+        	// sequential (just don't create bad move)
+        	for (int i = 0; i < SIZE*SIZE; i++) {
+            	Point srcN = myGridGraph.grid[i];
+            	
+            	HashSet<Point> edges = myGridGraph.getEdgesFromPoint(srcN);
+    			Iterator<Point> possibleTargets = edges.iterator();
+    			while(movepr.move == false && possibleTargets.hasNext()) {
+    				Point aTarget = possibleTargets.next();
+    				
+    				movepr.src = new Point(srcN);
+    				movepr.target = new Point(aTarget);
+    				if(!moveWillCreateAdvMoves(movepr)) {
+    					movepr.move = true;
+    					System.out.printf("Sequential (%d, %d) -> (%d, %d) (%d+%d) edges from src %d\n", movepr.src.x, movepr.src.y, movepr.target.x, movepr.target.y, movepr.src.value, movepr.target.value, advGridGraph.getEdgesFromPoint(movepr.src).size());
+    					break;
+    				}
+    			}
+            }
+        }
+        if (movepr.move == false) {
+        	//do half dumb (might create bad moves, but will get a valid move)
         	System.out.printf("Last option\n");
         	for (int i = 0; i < SIZE*SIZE; i++) {
             	Point p = myGridGraph.grid[i];
@@ -282,7 +322,7 @@ public class Player extends offset.sim.Player {
 	public boolean moveWillCreateAdvMoves(movePair movepr) {
 		Point advGridPoint = advGridGraph.getGraphGridPoint(movepr.target.x, movepr.target.y);
 		
-		// TODO play with this value: ignore if we will create a stealiable pile of value 2
+		// TODO play with this value: currently it means that will ignore stealiable piles of 2
 		if(movepr.target.value == 1) {
 			return false;
 		}
@@ -305,6 +345,16 @@ public class Player extends offset.sim.Player {
                 	return (myGridGraph.getEdgesFromPoint(o2).size() - myGridGraph.getEdgesFromPoint(o1).size());
                 }
                 return diff;
+            }
+        };
+        public Comparator<Point> SMARTEDGES_AND_VALUE = new Comparator<Point>() {
+            @Override
+            public int compare(Point o1, Point o2) {
+                int i = SMARTEDGES.compare(o1, o2);
+                if (i == 0) {
+                	return o2.value - o1.value;
+                }
+                return i;
             }
         };
     }
