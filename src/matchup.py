@@ -9,8 +9,8 @@ import os
 
 from multiprocessing.pool import ThreadPool
 
-DEBUG = True
-VERBOSE = True
+DEBUG = False
+VERBOSE = False
 
 MAX_THREADS = 4
 
@@ -18,7 +18,7 @@ Player = namedtuple('Player', ['name', 'p', 'q'])
 Player.d = lambda self: self.p + self.q
 Player.diff = lambda self: self.q - self.p
 
-game_regex = re.compile(r"Winner: \w+. Final score: (?P<left>\d+) - (?P<right>\d+)")
+game_regex = re.compile(r"Winner: \w+. Final score: (?P<left>-?\d+) - (?P<right>-?\d+)")
 assert(game_regex.match("Winner: dumb. Final score: 490 - 522").groupdict() == {'left': '490', 'right':'522'})
 
 class GameFailedException(Exception):
@@ -40,7 +40,7 @@ def run_match(left, right):
         right = right)
 
     if DEBUG:
-        print command
+        print command+"\n"
 
     out, err = Popen(command.split(' '), stdout=PIPE, stderr=PIPE).communicate()
 
@@ -50,7 +50,11 @@ def run_match(left, right):
     return parse_match_output(output_lines)
 
 def differential(scores):
-    return scores[1] - scores[0]
+    if scores[0] == -1:
+        return -scores[1]
+    if scores[1] == -1:
+        return scores[0]
+    return scores[0] - scores[1]
 
 def run_all_matches(left_name, right_name, d):
     all_pqs = [(p, d - p) for p in range(1,d-1) if p < d - p]
@@ -69,10 +73,15 @@ def run_all_matches(left_name, right_name, d):
 
         left_player = Player(left_name, *pair[0])
         right_player = Player(right_name, *pair[1])
+        scores = (0, 0)
+        result = 0
 
         try:
-            result = differential(run_match(left_player, right_player))
+            scores = run_match(left_player, right_player)
+            result = differential(scores)
         except GameFailedException:
+            if DEBUG:
+                print "Game Exception"
             if reruns > 0:
                 return run_pair((i, pair, reruns - 1))
 
@@ -81,18 +90,44 @@ def run_all_matches(left_name, right_name, d):
                     i + 1, result, left_player.p, left_player.q,
                     right_player.p, right_player.q)
 
-        return pair, result
+        return pair, result, scores
 
     MAX_RERUNS = 3
     pair_results = thread_pool.map(run_pair, [(i, pair, MAX_RERUNS) for i, pair in enumerate(pq_pairs)])
 
     final_results = [[None for i in range(side)] for j in range(side)]
+    def printCSVFormat(left_player, right_player, pq0, pq1, scores):
+        assert(sum(pq0) == sum(pq1))
+        #player0, player1, d, p0, q0, p1, q1, winner, score0, score1
+        winner = ""
+        if (scores[0] > scores[1]):
+            winner = left_player
+        elif (scores[1] > scores[0]):
+            winner = right_player
+        else:
+            winner = 'Tie'
+        print >> sys.stderr, '{0}, {1}, {2}, {3}, {4}, {5}, {6}, {7}, {8}, {9}'.format(
+            left_player,
+            right_player,
+            sum(pq0),
+            pq0[0],
+            pq0[1],
+            pq1[0],
+            pq1[1],
+            winner,
+            scores[0],
+            scores[1])
+
+
+
     for result in pair_results:
         pairs = result[0]
         row = (pairs[0][1] - pairs[0][0] - 1) / 2
         col = (pairs[1][1] - pairs[1][0] - 1) / 2
 
         final_results[row][col] = result[1]
+        scores = result[2]
+        printCSVFormat(left_name, right_name, pairs[0], pairs[1], scores)
 
     return final_results
 
@@ -124,7 +159,7 @@ def print_heatmap(left_player, right_player, d, results):
         if value is None:
             return val_format.format("")
 
-        color = right_color if value > 0 else left_color
+        color = right_color if value < 0 else left_color
         mod = "\033[1m" if abs(value) > 150 else ""
         return "{}{}{}\033[0m".format(color, mod, val_format.format(value))
 

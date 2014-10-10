@@ -17,12 +17,18 @@ import java.awt.geom.*;
 
 import javax.swing.*;
 
+// enum PType {
+//     PTYPE_noowner,
+//     PTYPE_player0,
+//     PTYPE_player1
+// }
+
 public class AltOffset
 {
     static String ROOT_DIR = "offset";
 
     // recompile .class file?
-    static boolean recompile = true;
+    static boolean recompile = false;
     
     // print more details?
     static boolean verbose = true;
@@ -51,6 +57,8 @@ public class AltOffset
     static boolean nomoveend = false;
     static int nomoveid = 100;
     
+    static String group0 = null;
+    static String group1 = null;
 	// list files below a certain directory
 	// can filter those having a specific extension constraint
     //
@@ -179,6 +187,8 @@ public class AltOffset
         JLabel label;
         JLabel label0;
         JLabel label2;
+        JLabel label3;
+        JLabel label4;
 
         public OffsetUI() {
             setPreferredSize(new Dimension(FRAME_SIZE, FRAME_SIZE));
@@ -187,8 +197,66 @@ public class AltOffset
 
         public void init() {}
 
+        void showdetail() {
+        	int max =0;
+            ArrayList<Integer[]> scorelist0 = new ArrayList<Integer[]>();
+            ArrayList<Integer[]> scorelist1 = new ArrayList<Integer[]>();
+            for (int i=0; i<size*size-1; i++) {
+            	if (grid[i].value>max) {
+            		max = grid[i].value;
+            	}
+            }
+            for (int i=2; i<=max; i=i*2) {
+            	Integer[] tmpint = new Integer[2];
+            	tmpint[0] = i;
+            	tmpint[1]=0;
+            	scorelist0.add(tmpint);
+            }
+            for (int i=2; i<=max; i=i*2) {
+            	Integer[] tmpint = new Integer[2];
+            	tmpint[0] = i;
+            	tmpint[1]=0;
+            	scorelist1.add(tmpint);
+            }
+            StringBuilder a = new StringBuilder();
+            StringBuilder b = new StringBuilder();
+            for (int i=0; i<size*size-1; i++) {
+            	if (grid[i].value>=2) {
+            		if (grid[i].owner==0) {
+            		
+            			scorelist0.get((int) (Math.log(grid[i].value)/Math.log(2)-1))[1]++;
+            		}
+            		else {
+            			scorelist1.get((int) (Math.log(grid[i].value)/Math.log(2)-1))[1]++;
+            		}
+            	}
+            }
+            a.append(group0);
+            a.append("--- ");
+            for (int i=0; i<scorelist0.size(); i++) {
+            	a.append("[");
+            	a.append(scorelist0.get(i)[0]);
+            	a.append(": ");
+            	a.append(scorelist0.get(i)[1]);
+            	a.append("] ");
+            }
+            
+            b.append(group1);
+            b.append("--- ");
+            for (int i=0; i<scorelist1.size(); i++) {
+            	b.append("[");
+            	b.append(scorelist1.get(i)[0]);
+            	b.append(": ");
+            	b.append(scorelist1.get(i)[1]);
+            	b.append("] ");
+            }
+            label3.setText(a.toString());
+            label3.setVisible(true);
+            label4.setText(b.toString());
+            label4.setVisible(true);
+        }
         private boolean performOnce() {
-        	label2.setText("Pair for player 0 is ( "+p0.p+", "+p0.q+") "+"Pair for player 1 is ( "+p1.p+", "+p1.q+")");
+        	label2.setText("Pair for "+group0+" is ( "+p0.p+", "+p0.q+") "+"Pair for "+group1+" is ( "+p1.p+", "+p1.q+")");
             label2.setVisible(true);
         	if (tick > MAX_TICKS) {
                 label.setText("Time out!!!");
@@ -204,30 +272,57 @@ public class AltOffset
                 label.setVisible(true);
         	   }
         	   else {
-        		   label.setText("Finishes in " + tick + " ticks!" + "Player " +nomoveid+ " Disqualified! ");
-                   label.setVisible(true);
+        		   if (nomoveid==0) {
+        		   label.setText("Finishes in " + tick + " ticks! " +group0+ " Disqualified! ");
+                   }
+        		   else {
+        			   label.setText("Finishes in " + tick + " ticks! " + group1+ " Disqualified! ");
+                          
+        		   }
+        		   label.setVisible(true);
         	   }
                 // print success message
                 int scr0, scr1;
                 scr0 = calculatescore(0);
                 scr1 = calculatescore(1);
-                label0.setText("score for player0  is "+scr0+" score for player1 is "+scr1);
+                label0.setText("score for "+group0+"  is "+scr0+" score for " +group1 +" is "+scr1);
                 label0.setVisible(true);
-                String winningGroupName = null;
-                if (scr0 > scr1) {
-                    System.out.println(group0);
-                } else {
-                    winningGroupName = group1;
-                }
-                winningGroupName = group0;
-                System.out.println(group1);
-                System.err.format("Winner: %s. Final score: %d - %d", winningGroupName, scr0, scr1);
                 //System.err.println("[SUCCESS] The player achieves the goal in " + tick + " ticks.");
+
+
+                String winningGroupName = null;
+                if(nomoveend == false)
+                {
+                    if (scr0 > scr1) {
+                        winningGroupName = group0;
+                    } else {
+                        winningGroupName = group1;
+                    }
+                    
+                    System.err.format("Winner: %s. Final score: %d - %d\n", winningGroupName, scr0, scr1);
+                }
+                else
+                {
+                    if (nomoveid == 1)
+                    {
+                        winningGroupName = group0;
+                        System.err.format("Winner: %s. Final score: %d - %d\n", winningGroupName, scr0, -1);
+                    }
+                    else
+                    {
+                        winningGroupName = group1;
+                        System.err.format("Winner: %s. Final score: %d - %d\n", winningGroupName, -1, scr1);
+                    }
+                    
+                }
+
                 next.setEnabled(false);
+                this.showdetail();
                 return false;
             }
             else {
                 playStep();
+                this.showdetail();
                 return true;
             }
         }
@@ -270,17 +365,27 @@ public class AltOffset
             label = new JLabel();
             label0 = new JLabel();
             label2 = new JLabel();
+            label3 = new JLabel();
+            label4 = new JLabel();
             label2.setVisible(false);
-            label2.setBounds(0, FIELD_SIZE+50+100, 350, 50);
+            label2.setBounds(50, FIELD_SIZE+50+100, 350, 50);
             label.setFont(new Font("Arial", Font.PLAIN, 15));
             
             label.setVisible(false);
-            label.setBounds(0, 60, 350, 50);
+            label.setBounds(50, 60, 350, 50);
             label.setFont(new Font("Arial", Font.PLAIN, 15));
 
             label0.setVisible(false);
             label0.setBounds(400, 60, 500, 50);
             label0.setFont(new Font("Arial", Font.PLAIN, 15));
+            
+            label3.setVisible(false);
+            label3.setBounds(50, FIELD_SIZE+100, 500, 50);
+            label3.setFont(new Font("Arial", Font.PLAIN, 15));
+            
+            label4.setVisible(false);
+            label4.setBounds(50, FIELD_SIZE+20+100, 350, 50);
+            label4.setFont(new Font("Arial", Font.PLAIN, 15));
             
             field.setBounds(100, 100, FIELD_SIZE + 50, FIELD_SIZE + 50);
 
@@ -290,6 +395,8 @@ public class AltOffset
             this.add(label);
             this.add(label2);
             this.add(label0);
+            this.add(label3);
+            this.add(label4);
             this.add(field);
 
             f.add(this);
@@ -475,19 +582,21 @@ public class AltOffset
         }
         ////System.out.println(next.move);
         if (next.move) {
-        if (validateMove(next, currentPr)) {
-        	writer.printf("(%d, %b, (%d, %d), (%d, %d), %d)\n", currentplayer, next.move, next.src.x, next.src.y, next.target.x, next.target.y, next.src.value*2);
-        	writer.flush();
-        	ArrayList record = new ArrayList();
-        	record.add(currentplayer);
-        	record.add(next);
-        	history.add(record);
-        	update(next, currentplayer);
-        	//pairPrint(next);
-        }
-        else {
-        	//System.out.println("[ERROR] Invalid move, let the player stay.");
-        }
+            if (validateMove(next, currentPr)) {
+            	writer.printf("(%d, %b, (%d, %d), (%d, %d), %d)\n", currentplayer, next.move, next.src.x, next.src.y, next.target.x, next.target.y, next.src.value*2);
+            	writer.flush();
+            	ArrayList record = new ArrayList();
+            	record.add(currentplayer);
+            	record.add(next);
+            	history.add(record);
+            	update(next, currentplayer);
+            	//pairPrint(next);
+            }
+            else {
+            	//System.out.println("[ERROR] Invalid move, let the player stay.");
+                nomoveend = true;
+                nomoveid = currentplayer;
+            }
         }
         else {
         	if (nomove(currentPr)) {
@@ -508,18 +617,33 @@ public class AltOffset
             if (endOfGame()) break;
             playStep();
         }
-        
+        String winningGroupName = null;
         int scr0 = calculatescore(0);
         int scr1 = calculatescore(1);
-        String winningGroupName = null;
-        if (scr0 > scr1) {
-            System.out.println(group0);
-        } else {
-            winningGroupName = group1;
+        if(nomoveend == false)
+        {
+            if (scr0 > scr1) {
+                winningGroupName = group0;
+            } else {
+                winningGroupName = group1;
+            }
+            
+            System.err.format("Winner: %s. Final score: %d - %d\n", winningGroupName, scr0, scr1);
         }
-        winningGroupName = group0;
-        System.out.println(group1);
-        System.err.format("Winner: %s. Final score: %d - %d\n", winningGroupName, scr0, scr1);
+        else
+        {
+            if (nomoveid == 1)
+            {
+                winningGroupName = group0;
+                System.err.format("Winner: %s. Final score: %d - %d\n", winningGroupName, scr0, -1);
+            }
+            else
+            {
+                winningGroupName = group1;
+                System.err.format("Winner: %s. Final score: %d - %d\n", winningGroupName, -1, scr1);
+            }
+            
+        }
         if (tick > MAX_TICKS) {
             // Time out
             //System.err.println("[ERROR] The player is time out!");
@@ -562,12 +686,11 @@ public class AltOffset
 	   return true;
    }
     
-    public static String group0 = null;
-    public static String group1 = null;
 	public static void main(String[] args) throws Exception
 	{
-        String output = null;
         // game parameters
+        
+        String output = null;
         int d = 0;
         if (args.length > 0)
              d = Integer.parseInt(args[0]);
