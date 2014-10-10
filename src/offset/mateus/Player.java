@@ -86,6 +86,8 @@ public class Player extends offset.sim.Player {
         ArrayList<PointPath> steals = advGridGraph.movePairByTime();
         ArrayList<PointPath> builds = myGridGraph.movePairByTime();
         
+        HashMap<Point, Point> buildsDelayed = new HashMap<Point, Point>();
+        
         movePair movepr = new movePair();
         Iterator<PointPath> stealIt = steals.iterator();
         Iterator<PointPath> buildIt = builds.iterator();
@@ -168,7 +170,6 @@ public class Player extends offset.sim.Player {
             					//do it
             					movepr.src = new Point(path.get(path.size()-1));
             					movepr.target = new Point(path.get(path.size()-2));
-            					System.out.printf("Promising protecting\n");
             				}
             				
             				// TODO play with this if
@@ -188,9 +189,12 @@ public class Player extends offset.sim.Player {
         			bestSteal = null;
         		}
 	        } else if (isBuild) {
-	        	//build
+	        	//build: wait to build piles >= 4, those piles will be combined when about to be stolen
+	        	// allow to build piles >= 4 if they are not both mine or target has a neighbor of higher value
 	        	Point src = bestBuild.path.get(bestBuild.path.size() - 1);
         		Point target = bestBuild.path.get(bestBuild.path.size() - 2);
+        		
+        		boolean bothAreMine = src.owner == id && target.owner == id;
         		
         		boolean targetHasHigherValueNeighbor = false;
         		HashSet<Point> edges = myGridGraph.getEdgesFromPoint(target);
@@ -203,7 +207,7 @@ public class Player extends offset.sim.Player {
     				}
     			}
         		
-	        	if (src.value <= 2 || targetHasHigherValueNeighbor) {
+	        	if (!bothAreMine || src.value <= 2 || targetHasHigherValueNeighbor) {
 	        		movepr.src = new Point(src);
 	        		movepr.target = new Point(target);
 	        		if(!moveWillCreateAdvMoves(movepr)) {
@@ -212,6 +216,9 @@ public class Player extends offset.sim.Player {
 	        			System.out.printf("Build (%d, %d) -> (%d, %d) (%d+%d) moves %d\n", movepr.src.x, movepr.src.y, movepr.target.x, movepr.target.y, movepr.src.value, movepr.target.value,bestBuild.moves);
 //		        		System.out.printf("Confirm values %d = %d && %d = %d\n", grid[32*movepr.src.x + movepr.src.y].value, movepr.src.value,grid[32*movepr.target.x + movepr.target.y].value, movepr.target.value);
 	        		}
+	        	} else {
+	        		buildsDelayed.put(getGridPoint(src), getGridPoint(target));
+	        		System.out.printf("New Delayed: (%d, %d) -> (%d, %d) (%d+%d)\n", src.x, src.y, target.x, target.y, src.value, target.value);
 	        	}
 	        	if(movepr.move == false) {
 //        			System.out.printf("Failed to Protect (%d, %d) v(%d) m(%d)\n", bestSteal.src.x, bestSteal.src.y, bestSteal.src.value, bestSteal.moves);
@@ -241,7 +248,12 @@ public class Player extends offset.sim.Player {
     				
     				movepr.src = new Point(srcN);
     				movepr.target = new Point(aTarget);
-    				if(!moveWillCreateAdvMoves(movepr)) {
+    				
+    				boolean moveWasDelayed = buildsDelayed.containsKey(getGridPoint(movepr.src)) && buildsDelayed.get(getGridPoint(movepr.src)).equals(getGridPoint(movepr.target));
+    				if(moveWasDelayed) {
+    					System.out.printf("(%d, %d) -> (%d, %d) (%d+%d) was delayed don't use it to break edges\n", movepr.src.x, movepr.src.y, movepr.target.x, movepr.target.y, movepr.src.value, movepr.target.value);
+    				}
+    				if(!moveWasDelayed && !moveWillCreateAdvMoves(movepr)) {
     					movepr.move = true;
     					System.out.printf("Remove edges (%d, %d) -> (%d, %d) (%d+%d) edges from src %d\n", movepr.src.x, movepr.src.y, movepr.target.x, movepr.target.y, movepr.src.value, movepr.target.value, advGridGraph.getEdgesFromPoint(movepr.src).size());
     					break;
@@ -281,7 +293,7 @@ public class Player extends offset.sim.Player {
     				movepr.target = new Point(aTarget);
     				if(!moveWillCreateAdvMoves(movepr)) {
     					movepr.move = true;
-    					System.out.printf("Sequential (%d, %d) -> (%d, %d) (%d+%d) edges from src %d\n", movepr.src.x, movepr.src.y, movepr.target.x, movepr.target.y, movepr.src.value, movepr.target.value, advGridGraph.getEdgesFromPoint(movepr.src).size());
+    					System.out.printf("Sequential (%d, %d) -> (%d, %d) (%d+%d). Edges from src %d\n", movepr.src.x, movepr.src.y, movepr.target.x, movepr.target.y, movepr.src.value, movepr.target.value, advGridGraph.getEdgesFromPoint(movepr.src).size());
     					break;
     				}
     			}
@@ -317,6 +329,10 @@ public class Player extends offset.sim.Player {
 //            System.out.printf("Confirm values %d = %d && %d = %d\n", grid[32*movepr.src.x + movepr.src.y].value, movepr.src.value,grid[32*movepr.target.x + movepr.target.y].value, movepr.target.value);
         }
         return movepr;
+	}
+	
+	public Point getGridPoint(Point p) {
+		return currentGrid[SIZE*p.x + p.y];
 	}
 	
 	public boolean moveWillCreateAdvMoves(movePair movepr) {
