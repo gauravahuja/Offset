@@ -339,28 +339,6 @@ public class GridGraph {
                 return i;
             }
         };
-        public Comparator<PointPath> MOVES = new Comparator<PointPath>() {
-            @Override
-            public int compare(PointPath o1, PointPath o2) {
-                return o1.moves - o2.moves;
-            }
-        };
-        public Comparator<PointPath> VALUE_REVERSE_MPT = new Comparator<PointPath>() {
-            @Override
-            public int compare(PointPath o1, PointPath o2) {
-                return o2.path.get(o2.path.size()-1).value - o1.path.get(o1.path.size()-1).value;
-            }
-        };
-        public Comparator<PointPath> MOVESANDVALUE = new Comparator<PointPath>() {
-            @Override
-            public int compare(PointPath o1, PointPath o2) {
-            	int i = MOVES.compare(o1, o2);
-                if (i == 0) {
-                    return VALUE_REVERSE_MPT.compare(o1, o2);
-                }
-                return i;
-            }
-        };
     }
 	public Comparators myComparators = new Comparators();
 	
@@ -445,13 +423,6 @@ public class GridGraph {
 			}
 			list.add(mpt);
 		}
-		Collections.sort(list, myComparators.MOVESANDVALUE);
-//		System.out.printf("begin\n");
-//		Iterator<PointValueIncrease> it = list.iterator();
-//		while(it.hasNext()) {
-//			PointValueIncrease mpt = it.next();
-//			System.out.printf("mpt = (%d,%d) -> (%d,%d) (%d+%d) %d\n", mpt.movepr.src.x,mpt.movepr.src.y,mpt.movepr.target.x,mpt.movepr.target.y, mpt.movepr.src.value, mpt.movepr.target.value, mpt.moves);
-//		}
 		return list;
 	}
 	

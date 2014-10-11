@@ -84,7 +84,9 @@ public class Player extends offset.sim.Player {
         
         
         ArrayList<PointPath> steals = advGridGraph.movePairByTime();
+        Collections.sort(steals, myComparators.MOVESANDVALUE);
         ArrayList<PointPath> builds = myGridGraph.movePairByTime();
+        Collections.sort(builds, myComparators.MOVESANDVALUE);
         
         HashMap<Point, Point> buildsDelayed = new HashMap<Point, Point>();
         
@@ -104,6 +106,7 @@ public class Player extends offset.sim.Player {
         	}
         	while (bestBuild == null && buildIt.hasNext()) {
 	        	bestBuild = buildIt.next();
+//	        	System.out.printf("bestBuild moves %d value %d\n", bestBuild.moves, bestBuild.src.value);
         	}
         	
 	        if (bestSteal != null && bestBuild != null) {
@@ -125,7 +128,7 @@ public class Player extends offset.sim.Player {
         		while(movepr.move == false && it.hasNext()) {
         			Point srcN = it.next();
 
-        			// TODO try with 1
+        			// 2 gives a better result
         			if(srcN.value <= 2) {
         				continue;
         			}
@@ -369,6 +372,38 @@ public class Player extends offset.sim.Player {
                 int i = SMARTEDGES.compare(o1, o2);
                 if (i == 0) {
                 	return o2.value - o1.value;
+                }
+                return i;
+            }
+        };
+        public Comparator<PointPath> MOVES = new Comparator<PointPath>() {
+            @Override
+            public int compare(PointPath o1, PointPath o2) {
+                return o1.moves - o2.moves;
+            }
+        };
+        public Comparator<PointPath> VALUE_REVERSE_MPT = new Comparator<PointPath>() {
+            @Override
+            public int compare(PointPath o1, PointPath o2) {
+                return o2.path.get(o2.path.size()-1).value - o1.path.get(o1.path.size()-1).value;
+            }
+        };
+        // adversary piles comes before mine piles
+//        public Comparator<PointPath> OWNERSHIP = new Comparator<PointPath>() {
+//            @Override
+//            public int compare(PointPath o1, PointPath o2) {
+//            	if(o1.src.owner == advId && o2.src.owner == advId) {
+//            		
+//            	}
+//                return o2.path.get(o2.path.size()-1).value - o1.path.get(o1.path.size()-1).value;
+//            }
+//        };
+        public Comparator<PointPath> MOVESANDVALUE = new Comparator<PointPath>() {
+            @Override
+            public int compare(PointPath o1, PointPath o2) {
+            	int i = MOVES.compare(o1, o2);
+                if (i == 0) {
+                    return VALUE_REVERSE_MPT.compare(o1, o2);
                 }
                 return i;
             }
