@@ -11,4 +11,5 @@ run:
 	java offset.sim.Offset $D $(PLAYER1) $(PLAYER2) $(DO_DISPLAY) $(OUTPUT) $(PQ_LEFT) $(PQ_RIGHT)
 
 compile:
+	./rmClassFiles.sh
 	javac ./offset/sim/*.java

@@ -34,7 +34,7 @@ java offset.sim.AltOffset d player0 player1 gui_1_0 outputfile p0 q0 p1 q1
 
 Matchup
 ------
-./matchup player opponent1 [opponent2..] d 2> result.csv
+./matchup player opponent1 [opponent2..] d 2>> result.csv
 
 result.csv has the format
 player0, player1, d, p0, q0, p1, q1, winner, score0, score1

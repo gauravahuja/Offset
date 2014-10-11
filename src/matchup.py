@@ -9,7 +9,7 @@ import os
 
 from multiprocessing.pool import ThreadPool
 
-DEBUG = False
+DEBUG = True
 VERBOSE = False
 
 MAX_THREADS = 4
@@ -51,10 +51,10 @@ def run_match(left, right):
 
 def differential(scores):
     if scores[0] == -1:
-        return -scores[1]
+        return scores[1]
     if scores[1] == -1:
-        return scores[0]
-    return scores[0] - scores[1]
+        return -scores[0]
+    return scores[1] - scores[0]
 
 def run_all_matches(left_name, right_name, d):
     all_pqs = [(p, d - p) for p in range(1,d-1) if p < d - p]
@@ -159,7 +159,7 @@ def print_heatmap(left_player, right_player, d, results):
         if value is None:
             return val_format.format("")
 
-        color = right_color if value < 0 else left_color
+        color = right_color if value > 0 else left_color
         mod = "\033[1m" if abs(value) > 150 else ""
         return "{}{}{}\033[0m".format(color, mod, val_format.format(value))
 
