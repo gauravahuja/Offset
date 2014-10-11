@@ -24,7 +24,20 @@ At the end of the project, we'll run a tournament to see which strategies are mo
 2. Running the Code
 ===================
 
+Main Sim
+--------
 java offset.sim.Offset d [player0] [player1] outputfile
+
+Alternate Sim:
+--------------
+java offset.sim.AltOffset d player0 player1 gui_1_0 outputfile p0 q0 p1 q1
+
+Matchup
+------
+./matchup player opponent1 [opponent2..] d 2>> result.csv
+
+result.csv has the format
+player0, player1, d, p0, q0, p1, q1, winner, score0, score1
 
 Example: java offset.sim.Offset 6 dumb dumb1 output
 Means p+q = 6, the first player is dumb, the second player is dumb1. The log file is the outputfile, which may be useful for you to check the history of the game.
