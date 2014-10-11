@@ -9,8 +9,9 @@ import os
 
 from multiprocessing.pool import ThreadPool
 
-DEBUG = True
+DEBUG = False
 VERBOSE = False
+ERROR =True
 
 MAX_THREADS = 4
 
@@ -80,7 +81,7 @@ def run_all_matches(left_name, right_name, d):
             scores = run_match(left_player, right_player)
             result = differential(scores)
         except GameFailedException:
-            if DEBUG:
+            if ERROR:
                 print "Game Exception"
             if reruns > 0:
                 return run_pair((i, pair, reruns - 1))
