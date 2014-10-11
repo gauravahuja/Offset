@@ -1,0 +1,8 @@
+
+At 9:48 PM, October 5th, 2014:
+
+The player checks 1000 potential shuffled moves to 1 depth. Scores moves
+based on her score minus the opponent's score. Wins against dumb player nearly
+every single time (once lost on a 12 d game randomly. Suspect it is because of
+the sampling of 1000 random moves from the potential list). When playing
+itself, our players seem to score relatively easily regardless of pairs.

@@ -1,4 +1,4 @@
-package offset.common;
+package offset.oct8_group6;
 
 import java.util.*;
 import java.util.Map.Entry;
@@ -17,7 +17,7 @@ public class GridGraph {
 	public int graphPlayerId;
 	public ArrayList<HashMap<Point, Set<Point>>> maps = new ArrayList<HashMap<Point, Set<Point>>>(); 
 	
-	volatile private Point[] possiblePoints = new Point[8];
+	private Point[] possiblePoints = new Point[8];
 	
 	// evaluation and scores variables
 	public int score;
@@ -308,12 +308,8 @@ public class GridGraph {
 	public int getScore() { return score; }
 	
 	public boolean doesPointHasEdges(Point p) {
-		HashSet<Point> edges = getEdgesFromPoint(p);
+		HashSet<Point> edges = edgesByPoint.get(getGraphGridPoint(p.x, p.y));
 		return edges.size() != 0;
-	}
-	
-	public HashSet<Point> getEdgesFromPoint(Point p) {
-		return edgesByPoint.get(getGraphGridPoint(p.x, p.y));
 	}
 	
 	public class Comparators {
@@ -339,26 +335,10 @@ public class GridGraph {
                 return i;
             }
         };
-        public Comparator<PointPath> MOVES = new Comparator<PointPath>() {
+        public Comparator<MovePairTime> MOVES = new Comparator<MovePairTime>() {
             @Override
-            public int compare(PointPath o1, PointPath o2) {
+            public int compare(MovePairTime o1, MovePairTime o2) {
                 return o1.moves - o2.moves;
-            }
-        };
-        public Comparator<PointPath> VALUE_REVERSE_MPT = new Comparator<PointPath>() {
-            @Override
-            public int compare(PointPath o1, PointPath o2) {
-                return o2.path.get(o2.path.size()-1).value - o1.path.get(o1.path.size()-1).value;
-            }
-        };
-        public Comparator<PointPath> MOVESANDVALUE = new Comparator<PointPath>() {
-            @Override
-            public int compare(PointPath o1, PointPath o2) {
-            	int i = MOVES.compare(o1, o2);
-                if (i == 0) {
-                    return VALUE_REVERSE_MPT.compare(o1, o2);
-                }
-                return i;
             }
         };
     }
@@ -379,17 +359,6 @@ public class GridGraph {
 //        	System.out.printf("%d-%d, ", edgesByPoint.get(p).size(), p.value);
 //        }
 //		System.out.printf("\n");
-		return points;
-	}
-	
-	public ArrayList<Point> getPointsDifferentThanZero() {
-		ArrayList<Point> points = new ArrayList<Point>(SIZE*SIZE);
-		for(int i = 0; i < SIZE*SIZE; i++) {
-			if(grid[i].value == 0) {
-				continue;
-			}
-			points.add(grid[i]);
-		}
 		return points;
 	}
 	
@@ -415,85 +384,60 @@ public class GridGraph {
 		}
 	}
 	
-	public class PointPath {
-		public Point src;
-		public ArrayList<Point> path;
+	public class MovePairTime {
+		public movePair movepr;
 		public int moves;
 		
-		public PointPath(ArrayList<Point> path) {
-			this.src = path.get(0);
-			this.path = path;
-			this.moves = path.size() - 1;
+		public MovePairTime(movePair movepr, int moves) {
+			this.movepr = movepr;
+			this.moves = moves;
 		}
 	}
 	
-	public ArrayList<PointPath> movePairByTime() {
-		ArrayList<PointPath> list = new ArrayList<PointPath>();
+	public ArrayList<MovePairTime> movePairByTime() {
+		ArrayList<MovePairTime> list = new ArrayList<MovePairTime>();
 		
 		for(int i = 0; i < SIZE*SIZE; i++) {
 			Point p = grid[i];
 			
-			if(p.value <= 2) {
+			// TODO play with this number: shoudl we worry about piles of value 1 and 2?
+			if(p.value < 4) {
 				continue;
 			}
 
-			ArrayList<Point> path = new ArrayList<Point>();
-			path.add(p);
-			PointPath mpt = getPointValueIncreaseOfPoint(p, path);
+			MovePairTime mpt = getMovePairTimeOfPoint(p,0);
 			if (mpt == null) {
 				continue;
 			}
 			list.add(mpt);
 		}
-		Collections.sort(list, myComparators.MOVESANDVALUE);
-//		System.out.printf("begin\n");
-//		Iterator<PointValueIncrease> it = list.iterator();
-//		while(it.hasNext()) {
-//			PointValueIncrease mpt = it.next();
-//			System.out.printf("mpt = (%d,%d) -> (%d,%d) (%d+%d) %d\n", mpt.movepr.src.x,mpt.movepr.src.y,mpt.movepr.target.x,mpt.movepr.target.y, mpt.movepr.src.value, mpt.movepr.target.value, mpt.moves);
-//		}
+		Collections.sort(list, myComparators.MOVES);
 		return list;
 	}
-	
-	public PointPath getPointValueIncreaseOfPoint(Point p, ArrayList<Point> path) {
-		int minMoves = Integer.MAX_VALUE;
-		PointPath minPP = null;
-		
+
+	public MovePairTime getMovePairTimeOfPoint(Point p, int movesCounter) {
+//		System.out.printf("getMovePairTimeOfPoint %d\n", p.value);
 		loadPossiblePoints(p, pr);
 		for(int possibleIndex = 0; possibleIndex < possiblePoints.length; possibleIndex++) {
 			if(possiblePoints[possibleIndex] == null) {
 				continue;
 			}
 			
-			if(path.contains(possiblePoints[possibleIndex])) {
-				continue;
-			}
-			
 			if(possiblePoints[possibleIndex].value > p.value) {
 				continue;
 			} else if(possiblePoints[possibleIndex].value == p.value) {
-				int movesNecessary = path.size();
-				if (minMoves > movesNecessary) {
-					ArrayList<Point> pathCopy = new ArrayList<Point>(path);
-					pathCopy.add(possiblePoints[possibleIndex]);
-					minPP = new PointPath(pathCopy);
-					minMoves = movesNecessary;
-				}
+				movePair movepr = new movePair();
+				movepr.src = possiblePoints[possibleIndex];
+				movepr.target = p;
+				MovePairTime mpt = new MovePairTime(movepr, movesCounter+1);
+				return mpt;
 			} else if(possiblePoints[possibleIndex].value == p.value/2 && possiblePoints[possibleIndex].value != 0) {
-				path.add(possiblePoints[possibleIndex]);
-				PointPath pp = getPointValueIncreaseOfPoint(possiblePoints[possibleIndex], path);
-				loadPossiblePoints(p, pr);
-				path.remove(path.lastIndexOf(possiblePoints[possibleIndex]));
-				
-				if (pp != null && minMoves > pp.moves) {
-					minPP = pp;
-					minMoves = pp.moves;
-				}
+				return getMovePairTimeOfPoint(possiblePoints[possibleIndex], movesCounter + 1);
 			} else {
 				continue;
 			}
 		}
-		return minPP;
+		return null;
 	}
 	
 }
