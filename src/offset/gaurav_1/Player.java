@@ -8,6 +8,7 @@ import offset.sim.movePair;
 
 public class Player extends offset.sim.Player {
     static final int SIZE = 32;
+    static int total_moves = 0;
     
 
     Point[] currentGrid;
@@ -70,6 +71,11 @@ public class Player extends offset.sim.Player {
         adv_moves = advGridGraph.getNumberOfEdges();
         cummulative = my_moves*adv_moves;
         System.out.printf("[B] Me:%d, Adv:%d, Cummulative:%d, MyScore: %d, AdvScore: %d\n", my_moves, adv_moves, cummulative, myGridGraph.getScore(), advGridGraph.getScore());
+
+        total_moves++;
+        System.out.printf("[LOG1] move:%d, my_moves:%d, adv_moves:%d, my_score:%d, adv_score:%d\n", total_moves, my_moves*2, adv_moves*2, myGridGraph.getScore(), advGridGraph.getScore());
+
+
         
         return movepr;
     }
