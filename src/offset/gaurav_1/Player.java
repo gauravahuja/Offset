@@ -29,7 +29,7 @@ public class Player extends offset.sim.Player {
         if (!playerInitialized) {
             myPair = pr;
             advPair = pr0;
-            advId = id + 1 % 2;
+            advId = (id + 1) % 2;
             myGridGraph = new GridGraph(pr, id);
             advGridGraph = new GridGraph(pr0, advId);
             playerInitialized = true;
