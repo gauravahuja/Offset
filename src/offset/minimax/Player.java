@@ -8,7 +8,7 @@ import offset.sim.movePair;
 
 public class Player extends offset.sim.Player {
     static final int SIZE = 32;
-    
+    static int total_moves = 0;    
 
     Point[] currentGrid;
     Pair myPair;
@@ -28,7 +28,7 @@ public class Player extends offset.sim.Player {
         if (!playerInitialized) {
             myPair = pr;
             advPair = pr0;
-            advId = id + 1 % 2;
+            advId = (id + 1) % 2;
             myGridGraph = new GridGraph(pr, id);
             advGridGraph = new GridGraph(pr0, advId);
             playerInitialized = true;
@@ -44,11 +44,15 @@ public class Player extends offset.sim.Player {
             }
         }
 
-        int my_moves = 2*myGridGraph.getNumberOfEdges();
-        int adv_moves = 2*advGridGraph.getNumberOfEdges();
+        int my_moves = myGridGraph.getNumberOfEdges();
+        int adv_moves = advGridGraph.getNumberOfEdges();
         int cummulative = my_moves*adv_moves;
         
         minimax_depth = 1;
+        if(cummulative < 200)
+        {
+            minimax_depth = 3;
+        }
         
         System.out.printf("[A] Me:%d, Adv:%d, Cummulative:%d, Depth: %d\n", my_moves, adv_moves, cummulative, minimax_depth);
         movePair movepr = new movePair();
@@ -59,6 +63,11 @@ public class Player extends offset.sim.Player {
             advGridGraph.updateGraphWithMovePair(movepr, id);
             myGridGraph.updateGraphWithMovePair(movepr, id);
         }
+        int my_score = myGridGraph.getScore();
+        int adv_score = advGridGraph.getScore();
+        total_moves++;
+        System.out.printf("[LOGM],%d,%d,%d,%d,%d,%d,%d\n", total_moves, my_moves*2, adv_moves*2, my_score, adv_score, (my_moves - adv_moves)*2, my_score-adv_score);
+
         return movepr;
     }
 
@@ -76,13 +85,18 @@ public class Player extends offset.sim.Player {
     {
         movePair best_movepr = new movePair();
         best_movepr.move = false;
+        best_movepr.src = new Point();
+        best_movepr.target = new Point();
 
         if((current_depth == max_depth) /*|| no moves left*/ )
         {
             next_best_move.move = best_movepr.move;
             next_best_move.src = best_movepr.src;
             next_best_move.target = best_movepr.target;
-            //print_minimax_summary(current_depth, max_depth, my_turn);
+            // if(max_depth > 1)
+            // {
+            //     print_minimax_summary(current_depth, max_depth, my_turn);
+            // }
             return myGridGraph.getScore();
         }
 
@@ -92,7 +106,7 @@ public class Player extends offset.sim.Player {
         Iterator<Point> it_n;
         Point p;
         Point p_n;
-        int best_value = myGridGraph.getScore();
+        int best_value;
         int value;
        
         movePair child_best_move = new movePair();
@@ -102,6 +116,7 @@ public class Player extends offset.sim.Player {
 
         if (my_turn)
         {
+            best_value = myGridGraph.getScore(); //Because I have to maximize
             //keys = myGridGraph.edgesByPoint.keySet();
             keys.addAll(myGridGraph.edgesByPoint.keySet());
             it = keys.iterator();
@@ -109,12 +124,9 @@ public class Player extends offset.sim.Player {
             while(it.hasNext())
             {
                 p = it.next();
-                //neighbors = myGridGraph.edgesByPoint.get(p);
-                //best_value = -1;
+                best_value = -1;
                 neighbors.clear();
                 neighbors.addAll(myGridGraph.edgesByPoint.get(p));
-                if(neighbors == null)
-                    continue;
                 
                 it_n = neighbors.iterator();
                 while(it_n.hasNext())
@@ -128,7 +140,7 @@ public class Player extends offset.sim.Player {
                     advGridGraph.updateGraphWithMovePair(movepr, id);
                     //print_minimax_summary(current_depth, max_depth, my_turn);
 
-                    value = minimax_run(current_depth+1, max_depth, !my_turn, child_best_move);
+                    value = minimax_run(current_depth+1, max_depth, my_turn, child_best_move);
 
                     if (value >= best_value)//Maximize best value
                     {
@@ -149,19 +161,15 @@ public class Player extends offset.sim.Player {
         }
         else
         {
-            //keys = advGridGraph.edgesByPoint.keySet();
+            best_value = myGridGraph.getScore();//Because Adv has to Minimize
             keys.addAll(advGridGraph.edgesByPoint.keySet());
-            //best_value = 10000000;
             it = keys.iterator();
             
             while(it.hasNext())
             {
                 p = it.next();
-                //neighbors = advGridGraph.edgesByPoint.get(p);
                 neighbors.clear();
                 neighbors.addAll(advGridGraph.edgesByPoint.get(p));
-                if(neighbors == null)
-                    continue;
                 
                 it_n = neighbors.iterator();
                 while(it_n.hasNext())
