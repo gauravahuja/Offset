@@ -42,31 +42,12 @@ public class Player extends offset.sim.Player {
         
         // update graphs with adversary last move
         if (history.size() >= 1) {
-        	// SANITY CHECK
-        	if (lastSeenAdvHistoryIndex > history.size() - 1) {
-        		System.out.printf("BUG! history smaller than before\n");
-        		try {
-					Thread.sleep(5000);
-				} catch (InterruptedException e) {
-					// TODO Auto-generated catch block
-					e.printStackTrace();
-				}
-        	}
-        	// update graphs
-        	for(int i = lastSeenAdvHistoryIndex + 1; i < history.size(); i++) {
-        		if (advId != (int) history.get(i).get(0)) {
-        			continue;
-        		}
-        		
-                movePair advMovePair = (movePair) history.get(i).get(1);
-                if(advMovePair.move == true) {
-//                	System.out.printf("New target (%d, %d) %d\n", advMovePair.target.x, advMovePair.target.y, advMovePair.target.value);
-                    advGridGraph.updateGraphWithMovePair(advMovePair, advId);
-                    myGridGraph.updateGraphWithMovePair(advMovePair, advId);
-                    System.out.printf("Adversary move (%d, %d) -> (%d, %d) (%d+%d)\n", advMovePair.src.x, advMovePair.src.y, advMovePair.target.x, advMovePair.target.y, advMovePair.src.value, advMovePair.target.value);
-                }
-        	}
-            lastSeenAdvHistoryIndex = history.size() -1;
+            int advId = (int) history.get(history.size() - 1).get(0);
+            if (advId != id) {
+                movePair advLastMovePair = (movePair) history.get(history.size() - 1).get(1);
+                advGridGraph.updateGraphWithMovePair(advLastMovePair, advId);
+                myGridGraph.updateGraphWithMovePair(advLastMovePair, advId);
+            }
         }
         // SANITY CHECK
         for(int i = 0; i < SIZE*SIZE; i++) {
@@ -104,7 +85,7 @@ public class Player extends offset.sim.Player {
 	        		bestSteal = null;
 	        	}
         	}
-        	while (bestBuild == null && buildIt.hasNext()) {
+        	if (bestBuild == null && buildIt.hasNext()) {
 	        	bestBuild = buildIt.next();
 //	        	System.out.printf("bestBuild moves %d value %d\n", bestBuild.moves, bestBuild.src.value);
         	}
@@ -142,6 +123,7 @@ public class Player extends offset.sim.Player {
         				if(!moveWillCreateAdvMoves(movepr)) {
         					System.out.printf("Protecting (%d,%d) [%d] by doing (%d,%d)->(%d,%d) %d/%d\n", bestSteal.path.get(0).x, bestSteal.path.get(0).y, bestSteal.moves, movepr.src.x, movepr.src.y, movepr.target.x, movepr.target.y, n, bestSteal.path.size());
         					movepr.move = true;
+        					PlayerStatistics.PROTECT.counter++;
         					break;
         				}
         			}
@@ -179,6 +161,7 @@ public class Player extends offset.sim.Player {
             				if(!moveWillCreateAdvMoves(movepr)) {
             					System.out.printf("Protecting (%d,%d) [%d] in the future by doing (%d,%d)->(%d,%d) %d/%d\n", bestSteal.path.get(0).x, bestSteal.path.get(0).y, bestSteal.moves, movepr.src.x, movepr.src.y, movepr.target.x, movepr.target.y, n, bestSteal.path.size());
             					movepr.move = true;
+            					PlayerStatistics.PROTECT2.counter++;
             					break stealpathloop;
             				}
             			}
@@ -215,42 +198,70 @@ public class Player extends offset.sim.Player {
 	        		movepr.target = new Point(target);
 	        		if(!moveWillCreateAdvMoves(movepr)) {
 	        			movepr.move = true;
-	        			
+	        			PlayerStatistics.BUILD.counter++;
 	        			System.out.printf("Build (%d, %d) -> (%d, %d) (%d+%d) moves %d\n", movepr.src.x, movepr.src.y, movepr.target.x, movepr.target.y, movepr.src.value, movepr.target.value,bestBuild.moves);
-//		        		System.out.printf("Confirm values %d = %d && %d = %d\n", grid[32*movepr.src.x + movepr.src.y].value, movepr.src.value,grid[32*movepr.target.x + movepr.target.y].value, movepr.target.value);
 	        		}
 	        	} else {
 	        		buildsDelayed.put(getGridPoint(src), getGridPoint(target));
 	        		System.out.printf("New Delayed: (%d, %d) -> (%d, %d) (%d+%d)\n", src.x, src.y, target.x, target.y, src.value, target.value);
 	        	}
 	        	if(movepr.move == false) {
-//        			System.out.printf("Failed to Protect (%d, %d) v(%d) m(%d)\n", bestSteal.src.x, bestSteal.src.y, bestSteal.src.value, bestSteal.moves);
         			// try a different bestBuild
 	        		bestBuild = null;
         		}
         	}
         }
         
-        // TODO play with this part: what to do when previous strategy didn't find anything good
-        // get a node in adversary graph with max number of edges and higher value
+        //garauv_2
         if(movepr.move == false) {
-        	List<Point> pointsByEdges = advGridGraph.getPointsDifferentThanZero();
-        	Collections.sort(pointsByEdges, Collections.reverseOrder(myComparators.SMARTEDGES_AND_VALUE));
-        	Iterator<Point> it = pointsByEdges.iterator();
-    		while(movepr.move == false && it.hasNext()) {
-    			Point srcN = it.next();
+        	int my_moves = myGridGraph.getNumberOfEdges();
+            int adv_moves = advGridGraph.getNumberOfEdges();
+            int cummulative = my_moves*adv_moves;
+            System.out.printf("[A2] Me:%d, Adv:%d, Cummulative:%d, MyScore: %d, AdvScore: %d\n", my_moves, adv_moves, cummulative, myGridGraph.getScore(), advGridGraph.getScore());
+            
+            boolean verbose = false;
+            // if (my_moves < 20)
+            // {
+            //     verbose = true;
+            // }
+
+            int minimax_depth = 1;        
+            minimax_run(0, minimax_depth, true, movepr, verbose);
+            
+            my_moves = myGridGraph.getNumberOfEdges();
+            adv_moves = advGridGraph.getNumberOfEdges();
+            cummulative = my_moves*adv_moves;
+            int my_score = myGridGraph.getScore();
+            int adv_score = advGridGraph.getScore();
+
+            System.out.printf("[B2] Me:%d, Adv:%d, Cummulative:%d, MyScore: %d, AdvScore: %d\n", my_moves, adv_moves, cummulative, my_score, adv_score);
+
+//            total_moves++;
+//            System.out.printf("[LOG2],%d,%d,%d,%d,%d,%d,%d\n", total_moves, my_moves*2, adv_moves*2, my_score, adv_score, (my_moves - adv_moves)*2, my_score-adv_score);
+        }
+        
+        
+        // move remover
+        if(movepr.move == false) {
+        	List<Point> allPointsDifferentThanZero = advGridGraph.getPointsDifferentThanZero();
+        	Collections.sort(allPointsDifferentThanZero, Collections.reverseOrder(myComparators.SMARTEDGES_AND_VALUE));
+    		for(Point p : allPointsDifferentThanZero) {
+    			if (movepr.move == true) {
+    				break;
+    			}
     			
-//    			if(myGridGraph.getEdgesFromPoint(srcN).size() >= advGridGraph.getEdgesFromPoint(srcN).size()) {
-//    				continue;
-//    			}
+    			if(myGridGraph.getEdgesFromPoint(p).size() >= advGridGraph.getEdgesFromPoint(p).size()) {
+    				continue;
+    			}
     			
-            	HashSet<Point> edges = myGridGraph.getEdgesFromPoint(srcN);
-    			Iterator<Point> possibleTargets = edges.iterator();
-    			while(movepr.move == false && possibleTargets.hasNext()) {
-    				Point aTarget = possibleTargets.next();
+            	HashSet<Point> edges = myGridGraph.getEdgesFromPoint(p);
+    			for(Point neighbor : edges) {
+    				if (movepr.move == true) {
+        				break;
+        			}
     				
-    				movepr.src = new Point(srcN);
-    				movepr.target = new Point(aTarget);
+    				movepr.src = new Point(p);
+    				movepr.target = new Point(neighbor);
     				
     				boolean moveWasDelayed = buildsDelayed.containsKey(getGridPoint(movepr.src)) && buildsDelayed.get(getGridPoint(movepr.src)).equals(getGridPoint(movepr.target));
     				if(moveWasDelayed) {
@@ -258,12 +269,13 @@ public class Player extends offset.sim.Player {
     				}
     				if(!moveWasDelayed && !moveWillCreateAdvMoves(movepr)) {
     					movepr.move = true;
+    					PlayerStatistics.MOVEREMOVER.counter++;
     					System.out.printf("Remove edges (%d, %d) -> (%d, %d) (%d+%d) edges from src %d\n", movepr.src.x, movepr.src.y, movepr.target.x, movepr.target.y, movepr.src.value, movepr.target.value, advGridGraph.getEdgesFromPoint(movepr.src).size());
-    					break;
     				}
     			}
             }
         }
+        
         if (movepr.move == false) {
         	// build second phase
         	buildIt = builds.iterator();
@@ -277,11 +289,13 @@ public class Player extends offset.sim.Player {
         		movepr.target = new Point(target);
         		if(!moveWillCreateAdvMoves(movepr)) {
         			movepr.move = true;
+        			PlayerStatistics.BUILD2ndPHASE.counter++;
         			System.out.printf("Build Phase 2 (%d, %d) -> (%d, %d) (%d+%d) moves %d\n", movepr.src.x, movepr.src.y, movepr.target.x, movepr.target.y, movepr.src.value, movepr.target.value,bestBuild.moves);
 //		        		System.out.printf("Confirm values %d = %d && %d = %d\n", grid[32*movepr.src.x + movepr.src.y].value, movepr.src.value,grid[32*movepr.target.x + movepr.target.y].value, movepr.target.value);
         		}
             }
         }
+        
         if (movepr.move == false) {
         	// sequential (just don't create bad move)
         	for (int i = 0; i < SIZE*SIZE; i++) {
@@ -296,6 +310,7 @@ public class Player extends offset.sim.Player {
     				movepr.target = new Point(aTarget);
     				if(!moveWillCreateAdvMoves(movepr)) {
     					movepr.move = true;
+    					PlayerStatistics.SEQUENTIAL.counter++;
     					System.out.printf("Sequential (%d, %d) -> (%d, %d) (%d+%d). Edges from src %d\n", movepr.src.x, movepr.src.y, movepr.target.x, movepr.target.y, movepr.src.value, movepr.target.value, advGridGraph.getEdgesFromPoint(movepr.src).size());
     					break;
     				}
@@ -312,11 +327,13 @@ public class Player extends offset.sim.Player {
             		if (advGridGraph.doesPointHasEdges(otherP)) {
                 		movepr.src = new Point(otherP);
                         movepr.target = new Point(p);
-                        movepr.move = true;            			
+                        movepr.move = true;      
+                        PlayerStatistics.DUMB.counter++;
             		} else {
                 		movepr.src = new Point(p);
                         movepr.target = new Point(otherP);
                         movepr.move = true;
+                        PlayerStatistics.DUMB.counter++;
             		}
 
                     break;
@@ -331,6 +348,7 @@ public class Player extends offset.sim.Player {
             System.out.printf("My move (%d, %d) -> (%d, %d) (%d+%d)\n", movepr.src.x, movepr.src.y, movepr.target.x, movepr.target.y, movepr.src.value, movepr.target.value);
 //            System.out.printf("Confirm values %d = %d && %d = %d\n", grid[32*movepr.src.x + movepr.src.y].value, movepr.src.value,grid[32*movepr.target.x + movepr.target.y].value, movepr.target.value);
         }
+        PlayerStatistics.printStats();
         return movepr;
 	}
 	
@@ -354,6 +372,161 @@ public class Player extends offset.sim.Player {
     	advGridGraph.undoGraphByOneMovePair();
     	return false;
 	}
+	
+	void print_minimax_summary(int current_depth, int max_depth, boolean my_turn)
+    {
+        System.out.printf("[Summary] current_depth = %d, max_depth = %d, my_turn = %b, my_score = %d, adv_score = %d\n", 
+            current_depth,
+            max_depth,
+            my_turn,
+            myGridGraph.getScore(),
+            advGridGraph.getScore());
+    }
+
+    int minimax_run(int current_depth, int max_depth, boolean my_turn, movePair next_best_move, boolean verbose)
+    {
+        movePair best_movepr = new movePair();
+        best_movepr.move = false;
+        best_movepr.src = new Point();
+        best_movepr.target = new Point();
+
+        if((current_depth == max_depth) /*|| no moves left*/ )
+        {
+            next_best_move.move = best_movepr.move;
+            next_best_move.src = best_movepr.src;
+            next_best_move.target = best_movepr.target;
+            //print_minimax_summary(current_depth, max_depth, my_turn);
+            return (myGridGraph.getNumberOfEdges()-advGridGraph.getNumberOfEdges());
+        }
+
+        HashSet<Point> keys = new HashSet<Point>();
+        HashSet<Point> neighbors = new HashSet<Point>();
+        Iterator<Point> it;
+        Iterator<Point> it_n;
+        Point p;
+        Point p_n;
+        int best_value;
+        int value;
+        int current_delta = myGridGraph.getNumberOfEdges() - advGridGraph.getNumberOfEdges();
+       
+        movePair child_best_move = new movePair();
+
+        movePair movepr = new movePair();
+        movepr.move = false;
+
+        if (my_turn)
+        {
+            best_value = -1000000; //Because I have to maximize
+            //keys = myGridGraph.edgesByPoint.keySet();
+            keys.addAll(myGridGraph.edgesByPoint.keySet());
+            it = keys.iterator();
+
+
+            while(it.hasNext())
+            {
+                p = it.next();
+                //neighbors = myGridGraph.edgesByPoint.get(p);
+                //best_value = -1;
+                neighbors.clear();
+                neighbors.addAll(myGridGraph.edgesByPoint.get(p));
+                if(neighbors == null)
+                    continue;
+                
+                it_n = neighbors.iterator();
+                while(it_n.hasNext())
+                {
+                    p_n = it_n.next();
+                    //p <- p_n
+                    movepr.src = new Point(p_n);
+                    movepr.target = new Point(p);
+
+                    myGridGraph.updateGraphWithMovePair(movepr, id);
+                    advGridGraph.updateGraphWithMovePair(movepr, id);
+                    //print_minimax_summary(current_depth, max_depth, my_turn);
+
+                    value = minimax_run(current_depth+1, max_depth, !my_turn, child_best_move, verbose) - current_delta;
+                    if(verbose)
+                    {
+                        System.out.printf("[Move] (%d, %d) -> (%d, %d) => Adv Moves=%d\n",
+                            movepr.src.x,
+                            movepr.src.y,
+                            movepr.target.x,
+                            movepr.target.y,
+                            value);
+                    }
+                    if (value >= best_value)//Maximize best value
+                    {
+                        best_movepr.src = movepr.src;
+                        best_movepr.target = movepr.target;
+                        best_movepr.move = true;
+                        best_value = value;
+                    }
+
+                    myGridGraph.undoGraphByOneMovePair();
+                    advGridGraph.undoGraphByOneMovePair();
+                }
+            }
+            next_best_move.move = best_movepr.move;
+            next_best_move.src = best_movepr.src;
+            next_best_move.target = best_movepr.target;
+            if(verbose)
+            {
+                System.out.printf("[Chosen Move] (%d, %d) -> (%d, %d) => Adv Moves=%d\n",
+                        best_movepr.src.x,
+                        best_movepr.src.y,
+                        best_movepr.target.x,
+                        best_movepr.target.y,
+                        best_value);
+            }
+            return best_value;
+        }
+        else
+        {
+            best_value = 1000000;//Because Adv has to minimize
+            //keys = advGridGraph.edgesByPoint.keySet();
+            keys.addAll(advGridGraph.edgesByPoint.keySet());
+            it = keys.iterator();
+            
+            while(it.hasNext())
+            {
+                p = it.next();
+                //neighbors = advGridGraph.edgesByPoint.get(p);
+                neighbors.clear();
+                neighbors.addAll(advGridGraph.edgesByPoint.get(p));
+                if(neighbors == null)
+                    continue;
+                
+                it_n = neighbors.iterator();
+                while(it_n.hasNext())
+                {
+                    p_n = it_n.next();
+                    //p <- p_n
+                    movepr.src = new Point(p_n);
+                    movepr.target = new Point(p);
+
+                    myGridGraph.updateGraphWithMovePair(movepr, advId);
+                    advGridGraph.updateGraphWithMovePair(movepr, advId);
+                    //print_minimax_summary(current_depth, max_depth, my_turn);
+
+                    value = minimax_run(current_depth+1, max_depth, !my_turn, child_best_move, verbose) - current_delta;
+                    if (value <= best_value)//Minimize best value
+                    {
+                        best_movepr.src = movepr.src;
+                        best_movepr.target = movepr.target;
+                        best_movepr.move = true;
+                        best_value = value;
+                    }
+
+                    myGridGraph.undoGraphByOneMovePair();
+                    advGridGraph.undoGraphByOneMovePair();
+                }
+            }
+            next_best_move.move = best_movepr.move;
+            next_best_move.src = best_movepr.src;
+            next_best_move.target = best_movepr.target;
+            return best_value;
+        }
+    }
 	
 	public class Comparators {
         public Comparator<Point> SMARTEDGES = new Comparator<Point>() {
@@ -410,4 +583,23 @@ public class Player extends offset.sim.Player {
         };
     }
 	public Comparators myComparators = new Comparators();
+	
+	public enum PlayerStatistics {
+		BUILD,
+		PROTECT,
+		PROTECT2,
+		GAURAV,
+		MOVEREMOVER,
+		BUILD2ndPHASE,
+		SEQUENTIAL,
+		DUMB;
+		
+		public int counter = 0;
+		public static void printStats() {
+			for(PlayerStatistics s : PlayerStatistics.values()) {
+				System.out.printf("%s: %d,", s, s.counter);
+			}
+			System.out.printf("\n");
+		}
+	}
 }
