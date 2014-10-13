@@ -703,7 +703,7 @@ public class AltOffset
         }
         if (args.length > 4)
         	output = args[4];
-        if (args.length == 8) {
+        if (args.length == 9) {
             int pl = Integer.parseInt(args[5]);
             int ql = Integer.parseInt(args[6]);
 
