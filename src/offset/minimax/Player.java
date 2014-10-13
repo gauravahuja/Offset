@@ -150,7 +150,7 @@ public class Player extends offset.sim.Player {
         else
         {
             //keys = advGridGraph.edgesByPoint.keySet();
-            keys.addAll(myGridGraph.edgesByPoint.keySet());
+            keys.addAll(advGridGraph.edgesByPoint.keySet());
             //best_value = 10000000;
             it = keys.iterator();
             
@@ -159,7 +159,7 @@ public class Player extends offset.sim.Player {
                 p = it.next();
                 //neighbors = advGridGraph.edgesByPoint.get(p);
                 neighbors.clear();
-                neighbors.addAll(myGridGraph.edgesByPoint.get(p));
+                neighbors.addAll(advGridGraph.edgesByPoint.get(p));
                 if(neighbors == null)
                     continue;
                 
