@@ -48,7 +48,7 @@ public class Player extends offset.sim.Player {
         int my_moves = myGridGraph.getNumberOfEdges();
         int adv_moves = advGridGraph.getNumberOfEdges();
         int cummulative = my_moves*adv_moves;
-        System.out.printf("[A] Me:%d, Adv:%d, Cummulative:%d, MyScore: %d, AdvScore: %d\n", my_moves, adv_moves, cummulative, myGridGraph.getScore(), advGridGraph.getScore());
+        System.out.printf("[A1] Me:%d, Adv:%d, Cummulative:%d, MyScore: %d, AdvScore: %d\n", my_moves, adv_moves, cummulative, myGridGraph.getScore(), advGridGraph.getScore());
         
         movePair movepr = new movePair();
         
@@ -70,10 +70,12 @@ public class Player extends offset.sim.Player {
         my_moves = myGridGraph.getNumberOfEdges();
         adv_moves = advGridGraph.getNumberOfEdges();
         cummulative = my_moves*adv_moves;
-        System.out.printf("[B] Me:%d, Adv:%d, Cummulative:%d, MyScore: %d, AdvScore: %d\n", my_moves, adv_moves, cummulative, myGridGraph.getScore(), advGridGraph.getScore());
+        int my_score = myGridGraph.getScore();
+        int adv_score = advGridGraph.getScore();
+        System.out.printf("[B1] Me:%d, Adv:%d, Cummulative:%d, MyScore: %d, AdvScore: %d\n", my_moves, adv_moves, cummulative, my_score, adv_score);
 
         total_moves++;
-        System.out.printf("[LOG1] move:%d, my_moves:%d, adv_moves:%d, my_score:%d, adv_score:%d\n", total_moves, my_moves*2, adv_moves*2, myGridGraph.getScore(), advGridGraph.getScore());
+        System.out.printf("[LOG1],%d,%d,%d,%d,%d,%d,%d\n", total_moves, my_moves*2, adv_moves*2, my_score, adv_score, (my_moves - adv_moves)*2, my_score-adv_score);
 
 
         

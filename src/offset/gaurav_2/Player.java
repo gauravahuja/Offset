@@ -76,7 +76,7 @@ public class Player extends offset.sim.Player {
         System.out.printf("[B2] Me:%d, Adv:%d, Cummulative:%d, MyScore: %d, AdvScore: %d\n", my_moves, adv_moves, cummulative, my_score, adv_score);
 
         total_moves++;
-        System.out.printf("[LOG2],%d,%d,%d,%d,%d\n", total_moves, my_moves*2, adv_moves*2, my_score, adv_score, (my_moves - adv_moves)*2, my_score-adv_score);
+        System.out.printf("[LOG2],%d,%d,%d,%d,%d,%d,%d\n", total_moves, my_moves*2, adv_moves*2, my_score, adv_score, (my_moves - adv_moves)*2, my_score-adv_score);
 
 
         
