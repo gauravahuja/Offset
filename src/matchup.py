@@ -25,7 +25,7 @@ assert(game_regex.match("Winner: dumb. Final score: 490 - 522").groupdict() == {
 class GameFailedException(Exception):
     pass
 
-def run_match(left, right):
+def run_match(left, right, match_number):
     def parse_match_output(output_lines):
         matches = game_regex.match(output_lines[-1])
         if matches is None:
@@ -43,7 +43,12 @@ def run_match(left, right):
     if DEBUG:
         print command+"\n"
 
+
     out, err = Popen(command.split(' '), stdout=PIPE, stderr=PIPE).communicate()
+    filename = "%s_%s_%d.log" %(left.name, right.name, match_number)
+    f = open(filename, 'w')
+    f.write(out)
+    f.close()
 
     output_lines = err.strip().split('\n')
     if VERBOSE:
@@ -78,7 +83,7 @@ def run_all_matches(left_name, right_name, d):
         result = 0
 
         try:
-            scores = run_match(left_player, right_player)
+            scores = run_match(left_player, right_player, i)
             result = differential(scores)
         except GameFailedException:
             if ERROR:
@@ -161,7 +166,7 @@ def print_heatmap(left_player, right_player, d, results):
             return val_format.format("")
 
         color = right_color if value > 0 else left_color
-        mod = "\033[1m" if abs(value) > 150 else ""
+        mod = "\033[1m" if abs(value) > 100 else ""
         return "{}{}{}\033[0m".format(color, mod, val_format.format(value))
 
     def write_row(i, row):
